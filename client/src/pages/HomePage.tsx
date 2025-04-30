@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { useLocation } from "wouter";
-import RemixForm from "@/components/RemixForm";
+import RotForm from "@/components/RotForm";
 import RotGrid from "@/components/RotGrid";
 import { Remix } from "@shared/schema";
 
@@ -22,7 +22,7 @@ const HomePage = () => {
   return (
     <div className="max-w-7xl mx-auto px-4 py-8">
       {/* Rot Form Section */}
-      <RemixForm onSubmitSuccess={handleRotSuccess} />
+      <RotForm onSubmitSuccess={handleRotSuccess} />
       
       {/* Popular Rots Section */}
       {isLoading ? (

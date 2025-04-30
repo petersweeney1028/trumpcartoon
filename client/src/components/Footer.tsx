@@ -20,11 +20,11 @@ const Footer = () => {
                 />
               </svg>
               <span className="ml-2 text-xl font-bold font-heading">
-                RemixTalk
+                Rot.Club
               </span>
             </div>
             <p className="text-gray-400 max-w-md">
-              Create hilarious political cartoon remixes with AI-generated
+              Create hilarious political cartoon rots with AI-generated
               dialogue. Share with friends and see what everyone's talking about.
             </p>
           </div>
@@ -123,7 +123,7 @@ const Footer = () => {
         </div>
 
         <div className="mt-8 pt-8 border-t border-gray-800 flex flex-col md:flex-row justify-between items-center">
-          <p className="text-gray-400">© {new Date().getFullYear()} RemixTalk. All rights reserved.</p>
+          <p className="text-gray-400">© {new Date().getFullYear()} Rot.Club. All rights reserved.</p>
           <div className="mt-4 md:mt-0 flex space-x-4">
             <a
               href="#"
