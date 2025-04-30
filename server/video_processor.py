@@ -3,8 +3,17 @@
 import os
 import sys
 import json
-from moviepy.editor import VideoFileClip, AudioFileClip, concatenate_videoclips
 import time
+
+try:
+    from moviepy.editor import VideoFileClip, AudioFileClip, concatenate_videoclips
+    MOVIEPY_AVAILABLE = True
+except ImportError:
+    print("Warning: moviepy module not found. Video processing will not work.")
+    VideoFileClip = None
+    AudioFileClip = None
+    concatenate_videoclips = None
+    MOVIEPY_AVAILABLE = False
 
 # Directory paths
 BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))

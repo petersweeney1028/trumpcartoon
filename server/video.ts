@@ -91,7 +91,7 @@ export async function generateTTS(
   try {
     console.log('Generating TTS for script:', JSON.stringify(script));
     
-    const scriptPath = path.join(__dirname, 'tts_processor.py');
+    const scriptPath = path.join(process.cwd(), 'server', 'tts_processor.py');
     const input = {
       script,
       apiKey: apiKey || process.env.FISH_AUDIO_API_KEY
@@ -132,7 +132,7 @@ export async function createVideo(
     console.log(`Using audio clips: ${trumpAudio1}, ${zelenskyAudio}, ${trumpAudio2}, ${vanceAudio}`);
     
     // Prepare the data for the Python script
-    const scriptPath = path.join(__dirname, 'video_processor.py');
+    const scriptPath = path.join(process.cwd(), 'server', 'video_processor.py');
     const input = {
       remixId: id,
       audioFiles: {

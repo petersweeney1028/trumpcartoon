@@ -3,10 +3,20 @@
 import os
 import sys
 import json
-import requests
 import time
 from uuid import uuid4
-from pydub import AudioSegment
+
+try:
+    import requests
+except ImportError:
+    print("Warning: requests module not found. API calls will not work.")
+    requests = None
+
+try:
+    from pydub import AudioSegment
+except ImportError:
+    print("Warning: pydub module not found. Mock TTS will not generate real silent audio.")
+    AudioSegment = None
 
 # Directory paths
 BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
