@@ -116,11 +116,7 @@ const RotForm = ({ onSubmitSuccess }: RotFormProps) => {
   };
 
   return (
-    <div className="bg-white rounded-lg shadow-lg p-6 mb-12">
-      <h2 className="text-2xl font-heading font-bold text-dark mb-6">
-        Create Your Rot
-      </h2>
-
+    <div>
       <Form {...form}>
         <form
           onSubmit={form.handleSubmit(onGenerateScript)}
@@ -138,7 +134,7 @@ const RotForm = ({ onSubmitSuccess }: RotFormProps) => {
                   <Input
                     {...field}
                     placeholder="e.g., who gets the last Pop-Tart"
-                    className="p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-secondary focus:border-secondary transition-colors"
+                    className="p-3 bg-background border border-border rounded-md focus:outline-none focus:ring-2 focus:ring-primary"
                   />
                 </FormControl>
                 <FormMessage />
@@ -146,29 +142,27 @@ const RotForm = ({ onSubmitSuccess }: RotFormProps) => {
             )}
           />
 
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-            {/* Trump's values */}
-            <div className="bg-white rounded-lg border border-gray-200 overflow-hidden shadow-sm">
-              <div className="p-4 bg-gray-50 flex items-center gap-3">
-                <div className="w-10 h-10 rounded-full bg-red-500 flex items-center justify-center text-white font-bold">
-                  T
-                </div>
-                <h3 className="font-heading font-bold">Trump</h3>
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+            {/* Trump */}
+            <div className="bg-background rounded-md border border-border overflow-hidden">
+              <div className="p-3 bg-primary flex items-center gap-2">
+                <div className="w-8 h-8 rounded-full bg-white flex items-center justify-center text-primary font-bold">T</div>
+                <h3 className="font-heading text-white">TRUMP</h3>
               </div>
-              <div className="p-4">
+              <div className="p-3">
                 <FormField
                   control={form.control}
                   name="trumpCaresAbout"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel className="block text-dark font-medium mb-2">
+                      <FormLabel className="block text-dark text-sm font-medium mb-1">
                         What does Trump care about?
                       </FormLabel>
                       <FormControl>
                         <Input
                           {...field}
                           placeholder="e.g., winning"
-                          className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-secondary focus:border-secondary transition-colors"
+                          className="w-full p-2 bg-background border border-border rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-primary"
                         />
                       </FormControl>
                       <FormMessage />
@@ -177,29 +171,27 @@ const RotForm = ({ onSubmitSuccess }: RotFormProps) => {
                 />
               </div>
             </div>
-
-            {/* Zelensky's values */}
-            <div className="bg-white rounded-lg border border-gray-200 overflow-hidden shadow-sm">
-              <div className="p-4 bg-gray-50 flex items-center gap-3">
-                <div className="w-10 h-10 rounded-full bg-blue-500 flex items-center justify-center text-white font-bold">
-                  Z
-                </div>
-                <h3 className="font-heading font-bold">Zelensky</h3>
+              
+            {/* Zelensky */}
+            <div className="bg-background rounded-md border border-border overflow-hidden">
+              <div className="p-3 bg-blue-500 flex items-center gap-2">
+                <div className="w-8 h-8 rounded-full bg-white flex items-center justify-center text-blue-500 font-bold">Z</div>
+                <h3 className="font-heading text-white">ZELENSKY</h3>
               </div>
-              <div className="p-4">
+              <div className="p-3">
                 <FormField
                   control={form.control}
                   name="zelenskyCaresAbout"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel className="block text-dark font-medium mb-2">
+                      <FormLabel className="block text-dark text-sm font-medium mb-1">
                         What does Zelensky care about?
                       </FormLabel>
                       <FormControl>
                         <Input
                           {...field}
-                          placeholder="e.g., international fairness"
-                          className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-secondary focus:border-secondary transition-colors"
+                          placeholder="e.g., fairness"
+                          className="w-full p-2 bg-background border border-border rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-primary"
                         />
                       </FormControl>
                       <FormMessage />
@@ -208,29 +200,27 @@ const RotForm = ({ onSubmitSuccess }: RotFormProps) => {
                 />
               </div>
             </div>
-
-            {/* JD Vance's values */}
-            <div className="bg-white rounded-lg border border-gray-200 overflow-hidden shadow-sm">
-              <div className="p-4 bg-gray-50 flex items-center gap-3">
-                <div className="w-10 h-10 rounded-full bg-orange-500 flex items-center justify-center text-white font-bold">
-                  V
-                </div>
-                <h3 className="font-heading font-bold">JD Vance</h3>
+              
+            {/* JD Vance */}
+            <div className="bg-background rounded-md border border-border overflow-hidden">
+              <div className="p-3 bg-orange-500 flex items-center gap-2">
+                <div className="w-8 h-8 rounded-full bg-white flex items-center justify-center text-orange-500 font-bold">V</div>
+                <h3 className="font-heading text-white">JD VANCE</h3>
               </div>
-              <div className="p-4">
+              <div className="p-3">
                 <FormField
                   control={form.control}
                   name="vanceCaresAbout"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel className="block text-dark font-medium mb-2">
+                      <FormLabel className="block text-dark text-sm font-medium mb-1">
                         What does JD Vance care about?
                       </FormLabel>
                       <FormControl>
                         <Input
                           {...field}
                           placeholder="e.g., Ohio values"
-                          className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-secondary focus:border-secondary transition-colors"
+                          className="w-full p-2 bg-background border border-border rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-primary"
                         />
                       </FormControl>
                       <FormMessage />
@@ -241,38 +231,22 @@ const RotForm = ({ onSubmitSuccess }: RotFormProps) => {
             </div>
           </div>
 
-          <div className="flex justify-center">
-            <Button
-              type="submit"
-              className="px-6 py-3 bg-secondary text-white font-bold rounded-lg hover:bg-blue-600 transition-colors flex items-center gap-2"
-              disabled={isGenerating}
-            >
-              {isGenerating ? (
-                <>
-                  <Loader2 className="w-6 h-6 animate-spin" />
-                  Generating...
-                </>
-              ) : (
-                <>
-                  <svg
-                    xmlns="http://www.w3.org/2000/svg"
-                    fill="none"
-                    viewBox="0 0 24 24"
-                    strokeWidth="1.5"
-                    stroke="currentColor"
-                    className="w-6 h-6"
-                  >
-                    <path
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      d="M12 4.5v15m7.5-7.5h-15"
-                    />
-                  </svg>
-                  Generate Script
-                </>
-              )}
-            </Button>
-          </div>
+          <Button
+            type="submit"
+            className="w-full bg-primary text-white font-bold py-3 px-4 rounded hover:bg-primary/90 transition-colors text-lg flex items-center justify-center gap-2"
+            disabled={isGenerating}
+          >
+            {isGenerating ? (
+              <>
+                <Loader2 className="w-6 h-6 animate-spin" />
+                GENERATING...
+              </>
+            ) : (
+              <>
+                GENERATE
+              </>
+            )}
+          </Button>
         </form>
       </Form>
 

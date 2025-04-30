@@ -49,76 +49,7 @@ const HomePage = () => {
               Generate a Rot
             </h2>
             
-            <div className="mb-6">
-              <label className="block text-dark font-medium mb-2">What are they arguing about?</label>
-              <input 
-                type="text"
-                placeholder="e.g., who gets the last Pop-Tart"
-                className="w-full p-3 bg-background border border-border rounded-md focus:outline-none focus:ring-2 focus:ring-primary"
-              />
-            </div>
-            
-            <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-6">
-              {/* Trump */}
-              <div className="bg-background rounded-md border border-border overflow-hidden">
-                <div className="p-3 bg-primary flex items-center gap-2">
-                  <div className="w-8 h-8 rounded-full bg-white flex items-center justify-center text-primary font-bold">T</div>
-                  <h3 className="font-heading text-white">TRUMP</h3>
-                </div>
-                <div className="p-3">
-                  <label className="block text-dark text-sm font-medium mb-1">What does Trump care about?</label>
-                  <input 
-                    type="text"
-                    placeholder="e.g., winning"
-                    className="w-full p-2 bg-background border border-border rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-primary"
-                  />
-                </div>
-              </div>
-              
-              {/* Zelensky */}
-              <div className="bg-background rounded-md border border-border overflow-hidden">
-                <div className="p-3 bg-blue-500 flex items-center gap-2">
-                  <div className="w-8 h-8 rounded-full bg-white flex items-center justify-center text-blue-500 font-bold">Z</div>
-                  <h3 className="font-heading text-white">ZELENSKY</h3>
-                </div>
-                <div className="p-3">
-                  <label className="block text-dark text-sm font-medium mb-1">What does Zelensky care about?</label>
-                  <input 
-                    type="text"
-                    placeholder="e.g., fairness"
-                    className="w-full p-2 bg-background border border-border rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-primary"
-                  />
-                </div>
-              </div>
-              
-              {/* JD Vance */}
-              <div className="bg-background rounded-md border border-border overflow-hidden">
-                <div className="p-3 bg-orange-500 flex items-center gap-2">
-                  <div className="w-8 h-8 rounded-full bg-white flex items-center justify-center text-orange-500 font-bold">V</div>
-                  <h3 className="font-heading text-white">JD VANCE</h3>
-                </div>
-                <div className="p-3">
-                  <label className="block text-dark text-sm font-medium mb-1">What does JD Vance care about?</label>
-                  <input 
-                    type="text"
-                    placeholder="e.g., Ohio values"
-                    className="w-full p-2 bg-background border border-border rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-primary"
-                  />
-                </div>
-              </div>
-            </div>
-            
-            <button 
-              className="w-full bg-primary text-white font-bold py-3 px-4 rounded hover:bg-primary/90 transition-colors text-lg"
-              onClick={() => setLocation('/')}
-            >
-              GENERATE
-            </button>
-            
-            <div className="mt-4 text-sm text-dark/60 flex justify-between">
-              <span>0 / 1 rots generated</span>
-              <span>0%</span>
-            </div>
+            <RotForm onSubmitSuccess={handleRotSuccess} />
           </div>
         </div>
       </div>
