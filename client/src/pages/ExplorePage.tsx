@@ -23,7 +23,7 @@ const ExplorePage = () => {
     <div className="max-w-7xl mx-auto px-4 py-8">
       <div className="mb-10">
         <h1 className="text-3xl font-heading font-bold text-dark mb-6">
-          Explore Remixes
+          Explore Rots
         </h1>
         
         <div className="flex flex-col sm:flex-row gap-4 mb-8">
@@ -31,7 +31,7 @@ const ExplorePage = () => {
             <div className="relative">
               <Input
                 type="text"
-                placeholder="Search remixes..."
+                placeholder="Search rots..."
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
                 className="w-full py-2 pl-10 pr-4 border border-gray-300 rounded-lg"
@@ -81,7 +81,7 @@ const ExplorePage = () => {
       ) : remixes && remixes.length > 0 ? (
         <RemixGrid 
           remixes={remixes as Remix[]} 
-          title="All Remixes" 
+          title="All Rots" 
           showViewAll={false}
         />
       ) : (
@@ -101,12 +101,12 @@ const ExplorePage = () => {
             />
           </svg>
           <h2 className="text-2xl font-heading font-bold text-dark mb-2">
-            No remixes found
+            No rots found
           </h2>
           <p className="text-gray-500 mb-6">
             {searchTerm
-              ? `We couldn't find any remixes matching "${searchTerm}"`
-              : "There are no remixes available yet"}
+              ? `We couldn't find any rots matching "${searchTerm}"`
+              : "There are no rots available yet"}
           </p>
           <Button
             className="bg-secondary hover:bg-blue-600"

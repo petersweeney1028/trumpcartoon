@@ -22,7 +22,7 @@ const Navbar = () => {
                 />
               </svg>
               <span className="ml-2 text-xl font-bold font-heading text-dark">
-                RemixTalk
+                Rot.Club
               </span>
             </Link>
           </div>
@@ -31,7 +31,7 @@ const Navbar = () => {
               href="/explore"
               className="px-3 py-2 rounded-md text-dark font-medium hover:bg-yellow-400 transition-colors"
             >
-              Explore Remixes
+              Explore Rots
             </Link>
             <Link
               href="/"
