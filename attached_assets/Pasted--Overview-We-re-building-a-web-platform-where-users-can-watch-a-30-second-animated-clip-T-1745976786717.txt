@@ -1,0 +1,191 @@
+## 🎯 **Overview**
+
+We're building a web platform where users can watch a 30-second animated clip (Trump, Zelensky, JD Vance arguing in a South Park–style), then **remix the dialogue** by specifying what the characters care about and generating a new script via LLM.
+
+The video animation never changes — only the **dialogue audio and text** are dynamically updated per user remix.
+
+Users discover clips on social, click a link or watermark, and are taken to a page where they can **make their own version and share it back.**
+
+---
+
+## 🧭 **User Flow Summary**
+
+1. User sees video on X or other social platform.
+2. Clicks a link or watermark to view it on our site.
+3. Lands on a remix page (`/scene/:id`) with the video + prompt details.
+4. Clicks **“Make Your Own Version”**.
+5. Fills in 3 fields:
+    - Argument topic
+    - What Trump cares about
+    - What Zelensky cares about
+    - What JD Vance cares about
+6. Clicks **“Generate Script”** → LLM returns script
+7. Can edit lines (limited to max character count for lip-flap timing).
+8. Clicks **“Create”** → server generates TTS audio → combines with static video.
+9. Final clip is rendered and available for download or sharing.
+10. Explore page (`/explore`) shows a feed of recent or popular remixes.
+
+---
+
+## 🧠 **LLM System Prompt Design**
+
+We’re using OpenAI GPT-3.5 or GPT-4 to generate character dialogue.
+
+### **System Prompt:**
+
+> You are writing dialogue for a 30-second political cartoon featuring three characters: Donald Trump, Volodymyr Zelensky, and JD Vance.
+> 
+> 
+> Trump speaks twice, Zelensky speaks once and JD speaks once  in order: **Trump → Zelensky → Trump → Vance**.
+> 
+> The scene is a satirical and should be hilarious. Do not hold back it does not need to be safe for work.
+> 
+> Use the following structure and return only a valid JSON object:
+> 
+> - Each line must be no more than **20 words**, approx. 6–8 seconds spoken.
+> - The tone is satirical, exaggerated, and memeable, can be offensive.
+> - Each character's point of view should reflect the user-provided inputs.
+
+### **User Inputs Passed into Prompt:**
+
+```json
+json
+CopyEdit
+{
+  "topic": "who gets the last Pop-Tart",
+  "trump_cares_about": "winning",
+  "zelensky_cares_about": "international fairness",
+  "vance_cares_about": "Ohio values"
+}
+
+```
+
+### **Expected LLM Output (JSON):**
+
+```json
+json
+CopyEdit
+{
+  "Trump": "I deserve the Pop-Tart. Everyone knows I'm the best at breakfast, just tremendous.",
+  "Zelensky": "In Ukraine, we share. You hoard everything like it's a global Pop-Tart crisis.",
+  "Vance": "This is why Ohio gets ignored. We just want snacks without world drama."
+}
+
+```
+
+---
+
+## 🧱 **Tech Stack Recommendation (Replit)**
+
+### **Frontend**
+
+- **Language**: HTML + TailwindCSS + JavaScript (or React if preferred)
+- **Pages**:
+    - `/scene/:id` — Video playback + “Remix” flow
+    - `/explore` — Grid of recent remixes
+- **Libraries**:
+    - `axios` for API calls
+    - Optional: `ffmpeg.wasm` for frontend video processing (or use backend)
+
+### **Backend**
+
+- **Language**: Python (Flask or FastAPI preferred)
+- **Functions**:
+    - LLM script generation via OpenAI API
+    - Text-to-Speech generation via ElevenLabs or Google Cloud TTS
+    - Compose final video by stitching:
+        - Pre-rendered animation
+        - Generated voice clips
+    - Host video for replay/download/share
+- **Storage**:
+    - Replit DB or JSON file storage
+    - Stores:
+        - Remix metadata: prompt, character values, script, remix ID
+        - Generated audio files (mp3)
+        - Final rendered video (mp4 or webm)
+
+---
+
+## 📼 **Video Composition**
+
+- **Base animation**:
+    - 3-character looped animation with timed speaking sections:
+        - Trump: 0s–8s
+        - Zelensky: 8s–14s
+        - Trump: 14s-20s
+        - Vance: 20s–28s
+- **Backend video composer**:
+    - Use `moviepy` or `ffmpeg` in Python to:
+        - Sync voice clips with lip-flap segments
+        - Overlay captions (optional)
+        - Output 30s final video (mp4)
+
+---
+
+## 📂 **Basic Project Structure**
+
+```bash
+bash
+CopyEdit
+/RemixTalk
+├── frontend/
+│   ├── index.html
+│   ├── remix.js
+│   ├── explore.js
+│   └── styles.css
+├── static/
+│   └── base_video.mp4
+├── backend/
+│   ├── app.py
+│   ├── tts.py
+│   ├── video_builder.py
+│   └── remix_store.json
+└── README.md
+
+```
+
+---
+
+## 🗃️ **Endpoints Overview**
+
+| Method | Endpoint | Purpose |
+| --- | --- | --- |
+| POST | `/api/generate` | Get script from LLM |
+| POST | `/api/render` | Create video from script + TTS |
+| GET | `/api/remixes` | Return list of remix metadata |
+| GET | `/scene/:id` | View individual remix page |
+
+---
+
+## 🚀 MVP Features
+
+✅ Generate script from user input
+
+✅ Fixed character dialogue structure
+
+✅ TTS + voice generation
+
+✅ Merge with fixed video
+
+✅ Shareable remix page
+
+✅ Gallery of remixes
+
+---
+
+## ⚙️ APIs Needed
+
+| Purpose | API |
+| --- | --- |
+| LLM text gen | OpenAI GPT-4 or 3.5 |
+| Voice gen (TTS) | ElevenLabs or Google TTS |
+| Video compositing | moviepy or ffmpeg |
+| Hosting | Replit |
+
+---
+
+## 🔒 Constraints
+
+- No user accounts/login needed (anonymous is fine for MVP)
+- Final video generation must stay within 30s
+- Fixed structure: 3 speakers, same speaking time each time, fixed timing
