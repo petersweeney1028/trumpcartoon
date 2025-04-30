@@ -1,69 +1,70 @@
 @import url('https://fonts.googleapis.com/css2?family=Russo+One&family=Open+Sans:wght@400;600;700&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Bebas+Neue&display=swap');
 
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
 
 :root {
-  --background: 0 0% 97%;
-  --foreground: 214 15% 20%;
-  --muted: 210 40% 96.1%;
-  --muted-foreground: 215.4 16.3% 46.9%;
-  --popover: 0 0% 100%;
-  --popover-foreground: 222.2 84% 4.9%;
-  --card: 0 0% 100%;
-  --card-foreground: 222.2 84% 4.9%;
-  --border: 214.3 31.8% 91.4%;
-  --input: 214.3 31.8% 91.4%;
-  --primary: 47 100% 50%;  /* FFC300 - South Park yellow */
-  --primary-foreground: 222.2 84% 4.9%;
-  --secondary: 209 80% 54%; /* 3498DB - Blue */
-  --secondary-foreground: 210 40% 98%;
-  --accent: 210 40% 96.1%;
-  --accent-foreground: 222.2 47.4% 11.2%;
+  --background: 49 58% 94%;  /* Cream background similar to Brainrot: #F8F3E0 */
+  --foreground: 0 0% 13%;    /* Dark text: #222222 */
+  --muted: 49 38% 88%;       /* Lighter cream: #F2EBD3 */
+  --muted-foreground: 0 0% 40%;
+  --popover: 49 58% 94%;
+  --popover-foreground: 0 0% 13%;
+  --card: 48 54% 85%;        /* Light beige card bg: #EAE2C1 */
+  --card-foreground: 0 0% 13%;
+  --border: 48 20% 80%;
+  --input: 48 20% 90%;
+  --primary: 16 84% 46%;     /* Orange-red: #E15231 */
+  --primary-foreground: 0 0% 100%;
+  --secondary: 0 0% 0%;      /* Black */
+  --secondary-foreground: 0 0% 100%;
+  --accent: 48 93% 64%;      /* Yellow accent: #FADA5E */
+  --accent-foreground: 0 0% 13%;
   --destructive: 0 84.2% 60.2%;
-  --destructive-foreground: 210 40% 98%;
-  --success: 142 69% 58%; /* 2ECC71 - Green */
-  --success-foreground: 210 40% 98%;
-  --warning: 36 100% 50%; /* F39C12 - Orange */
-  --warning-foreground: 210 40% 98%;
-  --danger: 0 86% 57%; /* E74C3C - Red */
-  --danger-foreground: 210 40% 98%;
-  --dark: 210 10% 23%; /* 343A40 - Dark gray */
-  --light: 210 17% 98%; /* F8F9FA - Light gray */
-  --ring: 215 20.2% 65.1%;
-  --radius: 0.5rem;
+  --destructive-foreground: 0 0% 98%;
+  --success: 142 69% 58%;    /* Green */
+  --success-foreground: 0 0% 100%;
+  --warning: 35 100% 57%;    /* Orange */
+  --warning-foreground: 0 0% 100%;
+  --danger: 0 86% 57%;       /* Red */
+  --danger-foreground: 0 0% 100%;
+  --dark: 0 0% 13%;          /* Dark gray almost black */
+  --light: 49 58% 94%;       /* Cream background */
+  --ring: 48 20% 80%;
+  --radius: 0.25rem;         /* Less rounded corners */
 }
 
 .dark {
-  --background: 222.2 84% 4.9%;
-  --foreground: 210 40% 98%;
-  --muted: 217.2 32.6% 17.5%;
-  --muted-foreground: 215 20.2% 65.1%;
-  --popover: 222.2 84% 4.9%;
-  --popover-foreground: 210 40% 98%;
-  --card: 222.2 84% 4.9%;
-  --card-foreground: 210 40% 98%;
-  --border: 217.2 32.6% 17.5%;
-  --input: 217.2 32.6% 17.5%;
-  --primary: 47 100% 50%;
-  --primary-foreground: 222.2 84% 4.9%;
-  --secondary: 209 80% 54%;
-  --secondary-foreground: 210 40% 98%;
-  --accent: 217.2 32.6% 17.5%;
-  --accent-foreground: 210 40% 98%;
-  --destructive: 0 62.8% 30.6%;
+  --background: 0 0% 13%;          /* Dark background: #222222 */
+  --foreground: 49 58% 94%;        /* Cream text */
+  --muted: 0 0% 18%;               /* Slightly lighter dark: #2E2E2E */
+  --muted-foreground: 49 38% 88%;
+  --popover: 0 0% 13%;
+  --popover-foreground: 49 58% 94%;
+  --card: 0 0% 18%;                /* Card background: #2E2E2E */
+  --card-foreground: 49 58% 94%;
+  --border: 0 0% 25%;
+  --input: 0 0% 25%;
+  --primary: 16 84% 46%;           /* Orange-red remains the same: #E15231 */
+  --primary-foreground: 0 0% 100%;
+  --secondary: 49 58% 94%;         /* Now cream */
+  --secondary-foreground: 0 0% 13%; 
+  --accent: 48 93% 64%;            /* Yellow accent: #FADA5E */
+  --accent-foreground: 0 0% 13%;
+  --destructive: 0 84.2% 60.2%;
   --destructive-foreground: 0 0% 98%;
   --success: 142 69% 58%;
-  --success-foreground: 210 40% 98%;
-  --warning: 36 100% 50%;
-  --warning-foreground: 210 40% 98%;
+  --success-foreground: 0 0% 100%;
+  --warning: 35 100% 57%;
+  --warning-foreground: 0 0% 100%;
   --danger: 0 86% 57%;
-  --danger-foreground: 210 40% 98%;
-  --dark: 210 10% 23%;
-  --light: 210 17% 98%;
-  --ring: 217.2 32.6% 17.5%;
-  --radius: 0.5rem;
+  --danger-foreground: 0 0% 100%;
+  --dark: 0 0% 13%;
+  --light: 49 58% 94%;
+  --ring: 0 0% 25%;
+  --radius: 0.25rem;               /* Keeping consistent with light mode */
 }
 
 @layer base {
