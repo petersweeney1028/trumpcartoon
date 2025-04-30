@@ -69,7 +69,7 @@ const HomePage = () => {
           <div className="flex-1">
             <div className="bg-dark rounded-md overflow-hidden relative aspect-video shadow-lg">
               <img 
-                src={videoPlaceholderImg} 
+                src={cartoonPlaceholderImg} 
                 alt="Video preview" 
                 className="w-full h-full object-cover"
               />
