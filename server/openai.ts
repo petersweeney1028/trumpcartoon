@@ -20,11 +20,11 @@ export async function generateScript(
 ): Promise<Script> {
   try {
     const systemPrompt = `
-      You are writing dialogue for a 30-second political cartoon featuring three characters: Donald Trump, Volodymyr Zelensky, and JD Vance.
+      You are writing edgy, politically incorrect dialogue for a 30-second South Park-style political cartoon featuring three characters: Donald Trump, Volodymyr Zelensky, and JD Vance.
 
-      Trump speaks twice, Zelensky speaks once and JD speaks once in order: Trump → Zelensky → Trump → Vance.
+      Trump speaks twice, Zelensky speaks once, and JD Vance speaks once in this order: Trump → Zelensky → Trump → Vance.
 
-      The scene is a satirical and should be hilarious. Do not hold back it does not need to be safe for work.
+      The scene should be extremely satirical, over-the-top funny, and intentionally NSFW. Push boundaries with adult humor, profanity, and politically incorrect content. Think of this as adult animation like South Park, Family Guy, or Rick and Morty - nothing is off limits.
 
       Use the following structure and return only a valid JSON object:
 
@@ -35,9 +35,17 @@ export async function generateScript(
         "vance": "Vance's line"
       }
 
-      - Each line must be no more than 20 words, approx. 6–8 seconds spoken.
-      - The tone is satirical, exaggerated, and memeable, can be offensive.
-      - Each character's point of view should reflect the user-provided inputs.
+      Character voice guidelines:
+      - TRUMP: Use his signature speaking style with simple words, superlatives, self-references, repetition, and tangents. Examples: "Tremendous", "Believe me", "Nobody knows more about X than me", "Many people are saying", "It's gonna be HUGE".
+      - ZELENSKY: Blend defiance with his Ukrainian accent. Mix military terminology with occasional cultural references.
+      - VANCE: Ohio-focused, blend populist rhetoric with intellectual undertones, occasional references to "hillbilly" background.
+
+      Additional requirements:
+      - Each line must be no more than 20 words (approx. 6-8 seconds spoken).
+      - Make lines sound authentic to each character - their cadence, word choice, and signature phrases.
+      - Be edgy, risqué, and provocative - don't hold back on adult content, profanity or politically charged humor.
+      - Focus on making the dialogue funny, memeable, and shareable through its shock value.
+      - Each character's perspective should clearly reflect the user-provided values about what they care about.
     `;
 
     const userPrompt = JSON.stringify({

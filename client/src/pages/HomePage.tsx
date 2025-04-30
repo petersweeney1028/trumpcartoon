@@ -90,7 +90,7 @@ const HomePage = () => {
                   <div className="w-6 h-6 rounded-full bg-primary flex items-center justify-center text-white font-bold text-xs">T</div>
                   <p className="font-bold">TRUMP:</p>
                 </div>
-                <p className="text-dark/80">"Listen, these Pop-Tarts, they're incredible. The best breakfast. Everyone says so. I deserve them all!"</p>
+                <p className="text-dark/80">"These Pop-Tarts are TREMENDOUS, believe me! I know Pop-Tarts better than ANYONE, maybe ever. The Fake News media won't tell you that!"</p>
               </div>
 
               <div className="p-4 bg-background rounded-md border border-border">
@@ -98,7 +98,7 @@ const HomePage = () => {
                   <div className="w-6 h-6 rounded-full bg-blue-500 flex items-center justify-center text-white font-bold text-xs">Z</div>
                   <p className="font-bold">ZELENSKY:</p>
                 </div>
-                <p className="text-dark/80">"We must share them equally. No one person can take all the resources."</p>
+                <p className="text-dark/80">"In Ukraine, we stand against Pop-Tart tyranny! Our brave pastry defenders must resist this breakfast aggression. This is our red line!"</p>
               </div>
 
               <div className="p-4 bg-background rounded-md border border-border">
@@ -106,7 +106,7 @@ const HomePage = () => {
                   <div className="w-6 h-6 rounded-full bg-orange-500 flex items-center justify-center text-white font-bold text-xs">V</div>
                   <p className="font-bold">VANCE:</p>
                 </div>
-                <p className="text-dark/80">"In Ohio, we value hard work. Whoever woke up earliest should get the Pop-Tarts."</p>
+                <p className="text-dark/80">"Listen, in Appalachia, we had to fight our cousins for breakfast scraps. These coastal elites don't understand real Pop-Tart struggles like us hillbillies."</p>
               </div>
             </div>
           </div>
