@@ -102,12 +102,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
   
-  // Get a specific remix by ID
+  // Get a specific rot by ID
   app.get("/api/remixes/:id", async (req, res) => {
     try {
       const id = parseInt(req.params.id);
       if (isNaN(id)) {
-        return res.status(400).json({ message: "Invalid remix ID" });
+        return res.status(400).json({ message: "Invalid rot ID" });
       }
       
       const remix = await storage.getRemix(id);
@@ -123,12 +123,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
   
-  // Track a view for a remix
+  // Track a view for a rot
   app.post("/api/remixes/:id/view", async (req, res) => {
     try {
       const id = parseInt(req.params.id);
       if (isNaN(id)) {
-        return res.status(400).json({ message: "Invalid remix ID" });
+        return res.status(400).json({ message: "Invalid rot ID" });
       }
       
       await storage.incrementViews(id);
@@ -140,7 +140,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
   
-  // Get popular remixes
+  // Get popular rots
   app.get("/api/remixes/popular", async (req, res) => {
     try {
       const limit = parseInt(req.query.limit as string) || 4;
@@ -148,17 +148,17 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       res.json(remixes);
     } catch (error) {
-      console.error("Error fetching popular remixes:", error);
-      res.status(500).json({ message: "Failed to fetch remixes" });
+      console.error("Error fetching popular rots:", error);
+      res.status(500).json({ message: "Failed to fetch rots" });
     }
   });
   
-  // Get related remixes
+  // Get related rots
   app.get("/api/remixes/related/:id", async (req, res) => {
     try {
       const id = parseInt(req.params.id);
       if (isNaN(id)) {
-        return res.status(400).json({ message: "Invalid remix ID" });
+        return res.status(400).json({ message: "Invalid rot ID" });
       }
       
       const limit = parseInt(req.query.limit as string) || 4;
@@ -166,8 +166,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       res.json(remixes);
     } catch (error) {
-      console.error("Error fetching related remixes:", error);
-      res.status(500).json({ message: "Failed to fetch remixes" });
+      console.error("Error fetching related rots:", error);
+      res.status(500).json({ message: "Failed to fetch rots" });
     }
   });
   
