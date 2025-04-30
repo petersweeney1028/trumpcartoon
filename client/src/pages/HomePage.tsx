@@ -25,8 +25,8 @@ const HomePage = () => {
     <div className="max-w-7xl mx-auto px-4 py-8">
       {/* Hero Section */}
       <div className="mb-16 mt-4">
-        <div className="flex flex-col md:flex-row items-start justify-between">
-          <div className="mb-6 md:mb-0 md:max-w-xl">
+        <div className="flex flex-col md:flex-row items-start justify-between md:space-x-8">
+          <div className="mb-8 md:mb-0 md:max-w-lg">
             <h1 className="text-4xl md:text-5xl font-heading tracking-tight mb-4 text-dark leading-none">
               <span className="flex items-center">
                 <span className="bg-primary text-white px-2 py-1 mr-1">ROT</span>
@@ -35,7 +35,7 @@ const HomePage = () => {
             </h1>
             
             {/* Cartoon Placeholder */}
-            <div className="bg-dark rounded-md overflow-hidden mb-6 shadow-lg">
+            <div className="bg-dark rounded-md overflow-hidden mb-6 shadow-lg w-10/12">
               <img 
                 src={cartoonPlaceholderImg} 
                 alt="Political cartoon" 
