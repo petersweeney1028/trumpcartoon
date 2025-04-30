@@ -19,10 +19,10 @@ for directory in [VIDEOS_DIR, VOICES_DIR, CLIPS_DIR]:
 
 # Fixed video segments
 VIDEO_SEGMENTS = {
-    "trump1": os.path.join(CLIPS_DIR, "video_1_trump1.mp4"),
-    "zelensky": os.path.join(CLIPS_DIR, "video_2_zelensky.mp4"),
-    "trump2": os.path.join(CLIPS_DIR, "video_3_trump2.mp4"),
-    "vance": os.path.join(CLIPS_DIR, "video_4_jd.mp4")
+    "trump1": os.path.join(CLIPS_DIR, "trump1.mp4"),
+    "zelensky": os.path.join(CLIPS_DIR, "zelensky.mp4"),
+    "trump2": os.path.join(CLIPS_DIR, "trump2.mp4"),
+    "vance": os.path.join(CLIPS_DIR, "vance.mp4")
 }
 
 def process_video(remix_id, audio_files):
