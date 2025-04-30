@@ -17,11 +17,11 @@ VOICES_DIR = os.path.join(STATIC_DIR, "voices")
 os.makedirs(VOICES_DIR, exist_ok=True)
 
 # Character voice mappings for Fish.audio
-# You'll need to update these with the actual voice IDs from Fish.audio
+# Using the specific voice models provided
 FISH_VOICE_MAPPING = {
-    "trump": "en_male_angry",  # Example: Select a male angry voice for Trump
-    "zelensky": "en_male_calm",  # Example: Select a male calm voice for Zelensky
-    "vance": "en_male_deep"  # Example: Select a male deep voice for Vance
+    "trump": "e58b0d7efca34eb38d5c4985e378abcb",  # Trump custom voice model
+    "zelensky": "6be22288f35f4e9b964bdbeb099baee1",  # Zelensky custom voice model
+    "vance": "86d3aee7cd9b4aab8cd8e54c3d35492b"  # JD Vance custom voice model
 }
 
 def generate_tts(character, text, api_key=None):
