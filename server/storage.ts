@@ -60,12 +60,13 @@ export class DatabaseStorage implements IStorage {
   }
   
   async getRemixes(search: string, sortBy: "newest" | "popular", limit: number): Promise<Remix[]> {
-    let query = db.select().from(remixes);
+    // Build base query
+    let queryBuilder = db.select().from(remixes);
     
     // Apply search filter if provided
     if (search) {
       const searchPattern = `%${search.toLowerCase()}%`;
-      query = query.where(
+      queryBuilder = queryBuilder.where(
         or(
           like(sql`LOWER(${remixes.topic})`, searchPattern),
           like(sql`LOWER(${remixes.trumpCaresAbout})`, searchPattern),
@@ -77,16 +78,16 @@ export class DatabaseStorage implements IStorage {
     
     // Apply sort
     if (sortBy === "newest") {
-      query = query.orderBy(desc(remixes.createdAt));
+      queryBuilder = queryBuilder.orderBy(desc(remixes.createdAt));
     } else {
       // Sort by popularity (views)
-      query = query.orderBy(desc(remixes.views));
+      queryBuilder = queryBuilder.orderBy(desc(remixes.views));
     }
     
     // Apply limit
-    query = query.limit(limit);
+    const results = await queryBuilder.limit(limit);
     
-    return await query;
+    return results;
   }
   
   async getPopularRemixes(limit: number): Promise<Remix[]> {
