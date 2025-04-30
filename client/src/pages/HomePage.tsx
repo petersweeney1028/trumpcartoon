@@ -23,20 +23,24 @@ const HomePage = () => {
   return (
     <div className="max-w-7xl mx-auto px-4 py-8">
       {/* Hero Section */}
-      <div className="mb-16 mt-8">
-        <div className="flex flex-col md:flex-row items-center justify-between">
-          <div className="mb-8 md:mb-0 md:max-w-xl">
-            <h1 className="text-6xl md:text-7xl font-heading tracking-tight mb-6 text-dark leading-none">
-              WELCOME TO
-              <br />
+      <div className="mb-16 mt-4">
+        <div className="flex flex-col md:flex-row items-start justify-between">
+          <div className="mb-6 md:mb-0 md:max-w-xl">
+            <h1 className="text-4xl md:text-5xl font-heading tracking-tight mb-4 text-dark leading-none">
               <span className="flex items-center">
                 <span className="bg-primary text-white px-2 py-1 mr-1">ROT</span>
                 .CLUB
               </span>
             </h1>
-            <p className="text-xl mb-6 text-dark/80">
-              Have something to say? We'll make political cartoons from it.
-            </p>
+            
+            {/* Cartoon Placeholder */}
+            <div className="bg-dark rounded-md overflow-hidden mb-6 shadow-lg">
+              <img 
+                src="/images/cartoon-placeholder.png" 
+                alt="Political cartoon" 
+                className="w-full object-cover"
+              />
+            </div>
           </div>
           
           <div className="w-full md:max-w-xl bg-card rounded-md p-6 shadow-sm">
