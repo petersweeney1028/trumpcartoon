@@ -5,6 +5,7 @@ import RotForm from "@/components/RotForm";
 import RotGrid from "@/components/RotGrid";
 import { Remix } from "@shared/schema";
 import videoPlaceholderImg from "@assets/image_1746026572673.png";
+import cartoonPlaceholderImg from "../assets/cartoon-placeholder.png";
 
 const HomePage = () => {
   const [, setLocation] = useLocation();
@@ -36,7 +37,7 @@ const HomePage = () => {
             {/* Cartoon Placeholder */}
             <div className="bg-dark rounded-md overflow-hidden mb-6 shadow-lg">
               <img 
-                src="/cartoon-placeholder.png" 
+                src={cartoonPlaceholderImg} 
                 alt="Political cartoon" 
                 className="w-full object-cover"
               />
