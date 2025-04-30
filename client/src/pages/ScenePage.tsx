@@ -5,7 +5,7 @@ import VideoPlayer from "@/components/VideoPlayer";
 import SharePanel from "@/components/SharePanel";
 import RemixDetails from "@/components/RemixDetails";
 import ScriptDisplay from "@/components/ScriptDisplay";
-import RemixGrid from "@/components/RemixGrid";
+import RotGrid from "@/components/RotGrid";
 import { apiRequest } from "@/lib/queryClient";
 import { Remix } from "@shared/schema";
 
@@ -89,8 +89,8 @@ const ScenePage = () => {
   if (!remix) {
     return (
       <div className="max-w-7xl mx-auto px-4 py-16 text-center">
-        <h1 className="text-3xl font-heading font-bold mb-4">Remix not found</h1>
-        <p className="mb-8">The remix you're looking for doesn't exist or may have been removed.</p>
+        <h1 className="text-3xl font-heading font-bold mb-4">Rot not found</h1>
+        <p className="mb-8">The rot you're looking for doesn't exist or may have been removed.</p>
       </div>
     );
   }
@@ -110,7 +110,7 @@ const ScenePage = () => {
             <SharePanel remixId={remix.id} />
           </div>
           
-          {/* Right Column: Remix Details */}
+          {/* Right Column: Rot Details */}
           <div className="lg:w-5/12">
             <RemixDetails remix={remix as Remix} />
             <ScriptDisplay script={remix.script} />
@@ -118,11 +118,11 @@ const ScenePage = () => {
         </div>
       </div>
       
-      {/* More Remixes Section */}
+      {/* More Rots Section */}
       {relatedRemixes && relatedRemixes.length > 0 && (
-        <RemixGrid
+        <RotGrid
           remixes={relatedRemixes as Remix[]}
-          title="Similar Remixes"
+          title="Similar Rots"
         />
       )}
     </div>

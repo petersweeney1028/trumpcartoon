@@ -113,7 +113,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const remix = await storage.getRemix(id);
       
       if (!remix) {
-        return res.status(404).json({ message: "Remix not found" });
+        return res.status(404).json({ message: "Rot not found" });
       }
       
       res.json(remix);

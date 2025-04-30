@@ -3,7 +3,7 @@ import { useQuery } from "@tanstack/react-query";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Remix } from "@shared/schema";
-import RemixGrid from "@/components/RemixGrid";
+import RotGrid from "@/components/RotGrid";
 
 const ExplorePage = () => {
   const [searchTerm, setSearchTerm] = useState("");
@@ -79,7 +79,7 @@ const ExplorePage = () => {
           <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-secondary"></div>
         </div>
       ) : remixes && remixes.length > 0 ? (
-        <RemixGrid 
+        <RotGrid 
           remixes={remixes as Remix[]} 
           title="All Rots" 
           showViewAll={false}
