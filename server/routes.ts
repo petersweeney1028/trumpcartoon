@@ -40,7 +40,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
   
-  // Render a remix with TTS and video
+  // Render a rot with TTS and video
   app.post("/api/render", async (req, res) => {
     try {
       const validatedData = renderRemixSchema.parse(req.body);
@@ -71,7 +71,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         vanceAudio
       );
       
-      // Save remix to storage
+      // Save rot to storage
       const remix = await storage.createRemix({
         topic: validatedData.topic,
         trumpCaresAbout: validatedData.trumpCaresAbout,
@@ -83,11 +83,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
       });
       
       res.json({ 
-        message: "Remix created successfully", 
+        message: "Rot created successfully", 
         id: remix.id
       });
     } catch (error) {
-      console.error("Remix creation error:", error);
+      console.error("Rot creation error:", error);
       
       if (error instanceof z.ZodError) {
         return res.status(400).json({ 
@@ -97,7 +97,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
       
       res.status(500).json({ 
-        message: "Failed to create remix" 
+        message: "Failed to create rot" 
       });
     }
   });
@@ -173,7 +173,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   
 
   
-  // Get all remixes with search and sort
+  // Get all rots with search and sort
   app.get("/api/remixes", async (req, res) => {
     try {
       const search = req.query.search as string || "";

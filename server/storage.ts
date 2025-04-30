@@ -9,13 +9,13 @@ export interface IStorage {
   getUserByUsername(username: string): Promise<User | undefined>;
   createUser(user: InsertUser): Promise<User>;
   
-  // Remix methods
+  // Rot methods
   createRemix(remix: InsertRemix): Promise<Remix>;
   getRemix(id: number): Promise<Remix | undefined>;
   getRemixes(search: string, sortBy: "newest" | "popular", limit: number): Promise<Remix[]>;
   getPopularRemixes(limit: number): Promise<Remix[]>;
-  getRelatedRemixes(remixId: number, limit: number): Promise<Remix[]>;
-  incrementViews(remixId: number): Promise<void>;
+  getRelatedRemixes(rotId: number, limit: number): Promise<Remix[]>;
+  incrementViews(rotId: number): Promise<void>;
 }
 
 // Database-based storage implementation
@@ -42,7 +42,7 @@ export class DatabaseStorage implements IStorage {
     return user;
   }
   
-  // Remix methods
+  // Rot methods
   async createRemix(insertRemix: InsertRemix): Promise<Remix> {
     const [remix] = await db
       .insert(remixes)
@@ -94,14 +94,14 @@ export class DatabaseStorage implements IStorage {
     return this.getRemixes("", "popular", limit);
   }
   
-  async getRelatedRemixes(remixId: number, limit: number): Promise<Remix[]> {
-    // Get the source remix first
-    const sourceRemix = await this.getRemix(remixId);
+  async getRelatedRemixes(rotId: number, limit: number): Promise<Remix[]> {
+    // Get the source rot first
+    const sourceRemix = await this.getRemix(rotId);
     if (!sourceRemix) {
       return [];
     }
     
-    // Find remixes with similar topics or character interests
+    // Find rots with similar topics or character interests
     const relatedRemixes = await db
       .select()
       .from(remixes)
