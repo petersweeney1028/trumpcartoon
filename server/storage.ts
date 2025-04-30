@@ -1,4 +1,6 @@
-import { users, type User, type InsertUser, Remix, InsertRemix } from "@shared/schema";
+import { users, type User, type InsertUser, Remix, InsertRemix, remixes } from "@shared/schema";
+import { db } from "./db";
+import { eq, desc, sql, like, or, and, not } from "drizzle-orm";
 
 // Storage interface for CRUD operations
 export interface IStorage {
@@ -16,81 +18,75 @@ export interface IStorage {
   incrementViews(remixId: number): Promise<void>;
 }
 
-export class MemStorage implements IStorage {
-  private users: Map<number, User>;
-  private remixes: Map<number, Remix>;
-  private userCurrentId: number;
-  private remixCurrentId: number;
-
-  constructor() {
-    this.users = new Map();
-    this.remixes = new Map();
-    this.userCurrentId = 1;
-    this.remixCurrentId = 1;
-  }
-
+// Database-based storage implementation
+export class DatabaseStorage implements IStorage {
   // User methods (from template)
   async getUser(id: number): Promise<User | undefined> {
-    return this.users.get(id);
+    const [user] = await db.select().from(users).where(eq(users.id, id));
+    return user;
   }
 
   async getUserByUsername(username: string): Promise<User | undefined> {
-    return Array.from(this.users.values()).find(
-      (user) => user.username === username,
-    );
+    const [user] = await db
+      .select()
+      .from(users)
+      .where(eq(users.username, username));
+    return user;
   }
 
   async createUser(insertUser: InsertUser): Promise<User> {
-    const id = this.userCurrentId++;
-    const user: User = { ...insertUser, id };
-    this.users.set(id, user);
+    const [user] = await db
+      .insert(users)
+      .values(insertUser)
+      .returning();
     return user;
   }
   
   // Remix methods
   async createRemix(insertRemix: InsertRemix): Promise<Remix> {
-    const id = this.remixCurrentId++;
-    const now = new Date();
-    
-    const remix: Remix = { 
-      ...insertRemix, 
-      id, 
-      views: 0, 
-      createdAt: now 
-    };
-    
-    this.remixes.set(id, remix);
+    const [remix] = await db
+      .insert(remixes)
+      .values(insertRemix)
+      .returning();
     return remix;
   }
   
   async getRemix(id: number): Promise<Remix | undefined> {
-    return this.remixes.get(id);
+    const [remix] = await db
+      .select()
+      .from(remixes)
+      .where(eq(remixes.id, id));
+    return remix;
   }
   
   async getRemixes(search: string, sortBy: "newest" | "popular", limit: number): Promise<Remix[]> {
-    let remixes = Array.from(this.remixes.values());
+    let query = db.select().from(remixes);
     
     // Apply search filter if provided
     if (search) {
-      const lowerSearch = search.toLowerCase();
-      remixes = remixes.filter(remix => 
-        remix.topic.toLowerCase().includes(lowerSearch) ||
-        remix.trumpCaresAbout.toLowerCase().includes(lowerSearch) ||
-        remix.zelenskyCaresAbout.toLowerCase().includes(lowerSearch) ||
-        remix.vanceCaresAbout.toLowerCase().includes(lowerSearch)
+      const searchPattern = `%${search.toLowerCase()}%`;
+      query = query.where(
+        or(
+          like(sql`LOWER(${remixes.topic})`, searchPattern),
+          like(sql`LOWER(${remixes.trumpCaresAbout})`, searchPattern),
+          like(sql`LOWER(${remixes.zelenskyCaresAbout})`, searchPattern),
+          like(sql`LOWER(${remixes.vanceCaresAbout})`, searchPattern)
+        )
       );
     }
     
     // Apply sort
     if (sortBy === "newest") {
-      remixes.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
+      query = query.orderBy(desc(remixes.createdAt));
     } else {
       // Sort by popularity (views)
-      remixes.sort((a, b) => (b.views || 0) - (a.views || 0));
+      query = query.orderBy(desc(remixes.views));
     }
     
     // Apply limit
-    return remixes.slice(0, limit);
+    query = query.limit(limit);
+    
+    return await query;
   }
   
   async getPopularRemixes(limit: number): Promise<Remix[]> {
@@ -98,50 +94,39 @@ export class MemStorage implements IStorage {
   }
   
   async getRelatedRemixes(remixId: number, limit: number): Promise<Remix[]> {
-    const sourceRemix = this.remixes.get(remixId);
+    // Get the source remix first
+    const sourceRemix = await this.getRemix(remixId);
     if (!sourceRemix) {
       return [];
     }
     
-    // Get all remixes except the source
-    let remixes = Array.from(this.remixes.values())
-      .filter(remix => remix.id !== remixId);
+    // Find remixes with similar topics or character interests
+    const relatedRemixes = await db
+      .select()
+      .from(remixes)
+      .where(
+        and(
+          not(eq(remixes.id, remixId)),
+          or(
+            like(sql`LOWER(${remixes.topic})`, `%${sourceRemix.topic.toLowerCase()}%`),
+            eq(remixes.trumpCaresAbout, sourceRemix.trumpCaresAbout),
+            eq(remixes.zelenskyCaresAbout, sourceRemix.zelenskyCaresAbout),
+            eq(remixes.vanceCaresAbout, sourceRemix.vanceCaresAbout)
+          )
+        )
+      )
+      .orderBy(desc(remixes.views))
+      .limit(limit);
     
-    // Calculate relevance score based on topic similarity
-    const scoredRemixes = remixes.map(remix => {
-      let score = 0;
-      
-      // Simple string matching for similarity
-      if (remix.topic.toLowerCase().includes(sourceRemix.topic.toLowerCase()) ||
-          sourceRemix.topic.toLowerCase().includes(remix.topic.toLowerCase())) {
-        score += 5;
-      }
-      
-      if (remix.trumpCaresAbout === sourceRemix.trumpCaresAbout) score += 1;
-      if (remix.zelenskyCaresAbout === sourceRemix.zelenskyCaresAbout) score += 1;
-      if (remix.vanceCaresAbout === sourceRemix.vanceCaresAbout) score += 1;
-      
-      return { remix, score };
-    });
-    
-    // Sort by relevance score then by views
-    scoredRemixes.sort((a, b) => {
-      if (b.score !== a.score) {
-        return b.score - a.score;
-      }
-      return (b.remix.views || 0) - (a.remix.views || 0);
-    });
-    
-    return scoredRemixes.slice(0, limit).map(item => item.remix);
+    return relatedRemixes;
   }
   
   async incrementViews(remixId: number): Promise<void> {
-    const remix = this.remixes.get(remixId);
-    if (remix) {
-      remix.views = (remix.views || 0) + 1;
-      this.remixes.set(remixId, remix);
-    }
+    await db
+      .update(remixes)
+      .set({ views: sql`${remixes.views} + 1` })
+      .where(eq(remixes.id, remixId));
   }
 }
 
-export const storage = new MemStorage();
+export const storage = new DatabaseStorage();
