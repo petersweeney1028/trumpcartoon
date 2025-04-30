@@ -36,7 +36,7 @@ const HomePage = () => {
             {/* Cartoon Placeholder */}
             <div className="bg-dark rounded-md overflow-hidden mb-6 shadow-lg">
               <img 
-                src="/images/cartoon-placeholder.png" 
+                src="/cartoon-placeholder.png" 
                 alt="Political cartoon" 
                 className="w-full object-cover"
               />
