@@ -102,44 +102,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
   
-  // Get a specific rot by ID
-  app.get("/api/remixes/:id", async (req, res) => {
-    try {
-      const id = parseInt(req.params.id);
-      if (isNaN(id)) {
-        return res.status(400).json({ message: "Invalid rot ID" });
-      }
-      
-      const remix = await storage.getRemix(id);
-      
-      if (!remix) {
-        return res.status(404).json({ message: "Rot not found" });
-      }
-      
-      res.json(remix);
-    } catch (error) {
-      console.error("Error fetching remix:", error);
-      res.status(500).json({ message: "Failed to fetch remix" });
-    }
-  });
-  
-  // Track a view for a rot
-  app.post("/api/remixes/:id/view", async (req, res) => {
-    try {
-      const id = parseInt(req.params.id);
-      if (isNaN(id)) {
-        return res.status(400).json({ message: "Invalid rot ID" });
-      }
-      
-      await storage.incrementViews(id);
-      
-      res.json({ success: true });
-    } catch (error) {
-      console.error("Error tracking view:", error);
-      res.status(500).json({ message: "Failed to track view" });
-    }
-  });
-  
   // Get popular rots
   app.get("/api/remixes/popular", async (req, res) => {
     try {
@@ -171,6 +133,46 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
   
+  // Get a specific rot by ID
+  app.get("/api/remixes/:id", async (req, res) => {
+    try {
+      const id = parseInt(req.params.id);
+      if (isNaN(id)) {
+        return res.status(400).json({ message: "Invalid rot ID" });
+      }
+      
+      const remix = await storage.getRemix(id);
+      
+      if (!remix) {
+        return res.status(404).json({ message: "Rot not found" });
+      }
+      
+      res.json(remix);
+    } catch (error) {
+      console.error("Error fetching rot:", error);
+      res.status(500).json({ message: "Failed to fetch rot" });
+    }
+  });
+  
+  // Track a view for a rot
+  app.post("/api/remixes/:id/view", async (req, res) => {
+    try {
+      const id = parseInt(req.params.id);
+      if (isNaN(id)) {
+        return res.status(400).json({ message: "Invalid rot ID" });
+      }
+      
+      await storage.incrementViews(id);
+      
+      res.json({ success: true });
+    } catch (error) {
+      console.error("Error tracking view:", error);
+      res.status(500).json({ message: "Failed to track view" });
+    }
+  });
+  
+
+  
   // Get all remixes with search and sort
   app.get("/api/remixes", async (req, res) => {
     try {
@@ -182,8 +184,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       res.json(remixes);
     } catch (error) {
-      console.error("Error fetching remixes:", error);
-      res.status(500).json({ message: "Failed to fetch remixes" });
+      console.error("Error fetching rots:", error);
+      res.status(500).json({ message: "Failed to fetch rots" });
     }
   });
   
