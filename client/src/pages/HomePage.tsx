@@ -4,7 +4,6 @@ import { useLocation } from "wouter";
 import RotForm from "@/components/RotForm";
 import RotGrid from "@/components/RotGrid";
 import { Remix } from "@shared/schema";
-import videoPlaceholderImg from "@assets/image_1746026572673.png";
 
 const HomePage = () => {
   const [, setLocation] = useLocation();
@@ -24,8 +23,9 @@ const HomePage = () => {
     <div className="max-w-7xl mx-auto px-4 py-8">
       {/* Hero Section */}
       <div className="mb-16 mt-8">
-        <div className="flex flex-col md:flex-row items-center justify-between">
-          <div className="mb-8 md:mb-0 md:max-w-xl">
+        <div className="grid grid-cols-1 md:grid-cols-12 gap-8 items-start">
+          {/* Left Column - Hero Text */}
+          <div className="md:col-span-5">
             <h1 className="text-6xl md:text-7xl font-heading tracking-tight mb-6 text-dark leading-none">
               WELCOME TO
               <br />
@@ -37,6 +37,42 @@ const HomePage = () => {
             <p className="text-xl mb-6 text-dark/80">
               Have something to say? We'll make political cartoons from it.
             </p>
+            
+            {/* Video Preview in Right Column on Small Screens */}
+            <div className="md:hidden mb-8">
+              <div className="rounded-md overflow-hidden bg-dark relative aspect-video shadow-lg">
+                <img 
+                  src="/static/cartoon-video-frame.png" 
+                  alt="Example cartoon" 
+                  className="w-full h-full object-cover"
+                />
+                <div className="absolute inset-0 flex items-center justify-center">
+                  <div className="w-12 h-12 rounded-full bg-primary/80 flex items-center justify-center">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-white">
+                      <polygon points="5 3 19 12 5 21 5 3"></polygon>
+                    </svg>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+          
+          {/* Center Column - Hidden on Mobile, Visible on Desktop - Video Preview */}
+          <div className="hidden md:block md:col-span-3">
+            <div className="rounded-md overflow-hidden bg-dark relative aspect-video shadow-lg">
+              <img 
+                src="/static/cartoon-video-frame.png" 
+                alt="Example cartoon" 
+                className="w-full h-full object-cover"
+              />
+              <div className="absolute inset-0 flex items-center justify-center">
+                <div className="w-12 h-12 rounded-full bg-primary/80 flex items-center justify-center">
+                  <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-white">
+                    <polygon points="5 3 19 12 5 21 5 3"></polygon>
+                  </svg>
+                </div>
+              </div>
+            </div>
           </div>
           
           <div className="w-full md:max-w-xl bg-card rounded-md p-6 shadow-sm">
@@ -133,7 +169,7 @@ const HomePage = () => {
           <div className="flex-1">
             <div className="bg-dark rounded-md overflow-hidden relative aspect-video shadow-lg">
               <img 
-                src={videoPlaceholderImg} 
+                src="/static/cartoon-video-frame.png" 
                 alt="Video preview" 
                 className="w-full h-full object-cover"
               />
