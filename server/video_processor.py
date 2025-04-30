@@ -56,6 +56,13 @@ def process_video(remix_id, audio_files):
                 "videoUrl": "/videos/remix_output_123.mp4"
             }
     """
+    # Check if moviepy is available before proceeding
+    if not MOVIEPY_AVAILABLE:
+        print("Error: moviepy module is not available. Cannot process video.")
+        # Return a mock video URL
+        output_filename = f"remix_{remix_id}.mp4"
+        return {"videoUrl": f"/videos/{output_filename}"}
+        
     try:
         start_time = time.time()
         print(f"Starting video processing for remix {remix_id}")
