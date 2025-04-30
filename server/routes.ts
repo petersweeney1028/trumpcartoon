@@ -3,7 +3,7 @@ import { createServer, type Server } from "http";
 import { storage } from "./storage";
 import { generateScript } from "./openai";
 import { generateSpeech } from "./tts";
-import { createVideo } from "./video";
+import { createVideo, generateTTS } from "./video";
 import { z } from "zod";
 import { generateScriptSchema, renderRemixSchema } from "@shared/schema";
 import { randomUUID } from "crypto";
@@ -45,7 +45,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       const validatedData = renderRemixSchema.parse(req.body);
       
-      // Generate unique IDs for the audio and video files
+      // Generate unique ID for the remix
       const id = randomUUID();
       
       // Create script object
@@ -56,20 +56,23 @@ export async function registerRoutes(app: Express): Promise<Server> {
         vance: validatedData.vance
       };
       
-      // Generate TTS audio for each line
-      const trumpAudio1 = await generateSpeech("trump", script.trump1);
-      const zelenskyAudio = await generateSpeech("zelensky", script.zelensky);
-      const trumpAudio2 = await generateSpeech("trump", script.trump2);
-      const vanceAudio = await generateSpeech("vance", script.vance);
+      console.log(`Generating TTS for remix ${id}`);
       
-      // Create video with the audio
-      const { videoUrl, audioUrl } = await createVideo(
+      // Generate all TTS audio files using our new Python processor
+      const audioFiles = await generateTTS(script);
+      
+      console.log(`TTS generated successfully for remix ${id}:`, audioFiles);
+      
+      // Create the final video with the audio files
+      const { videoUrl } = await createVideo(
         id,
-        trumpAudio1,
-        zelenskyAudio,
-        trumpAudio2,
-        vanceAudio
+        audioFiles.trump1,
+        audioFiles.zelensky,
+        audioFiles.trump2,
+        audioFiles.vance
       );
+      
+      console.log(`Video generated successfully for remix ${id}: ${videoUrl}`);
       
       // Save rot to storage
       const remix = await storage.createRemix({
@@ -79,7 +82,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         vanceCaresAbout: validatedData.vanceCaresAbout,
         script,
         videoUrl,
-        audioUrl
+        audioUrl: "" // We don't return a separate audio URL anymore
       });
       
       res.json({ 
