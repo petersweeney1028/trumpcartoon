@@ -107,7 +107,7 @@ export class DatabaseStorage implements IStorage {
       .from(remixes)
       .where(
         and(
-          not(eq(remixes.id, remixId)),
+          not(eq(remixes.id, rotId)),
           or(
             like(sql`LOWER(${remixes.topic})`, `%${sourceRemix.topic.toLowerCase()}%`),
             eq(remixes.trumpCaresAbout, sourceRemix.trumpCaresAbout),
@@ -122,11 +122,11 @@ export class DatabaseStorage implements IStorage {
     return relatedRemixes;
   }
   
-  async incrementViews(remixId: number): Promise<void> {
+  async incrementViews(rotId: number): Promise<void> {
     await db
       .update(remixes)
       .set({ views: sql`${remixes.views} + 1` })
-      .where(eq(remixes.id, remixId));
+      .where(eq(remixes.id, rotId));
   }
 }
 
