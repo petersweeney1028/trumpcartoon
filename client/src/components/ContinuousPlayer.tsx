@@ -104,58 +104,13 @@ const ContinuousPlayer = ({
     console.log('ContinuousPlayer mounted with clipInfo:', clipInfo);
     console.log('Script:', script);
     
-    // Actively preload all videos and audios
+    // Load all videos and audios
     sequence.forEach(segment => {
       const videoPath = mediaPaths[segment].video;
       const audioPath = mediaPaths[segment].audio;
       console.log(`Preloading ${segment} - video: ${videoPath}, audio: ${audioPath}`);
-      
-      // Eagerly load video files
-      const videoElement = document.createElement('video');
-      videoElement.preload = 'auto';
-      videoElement.src = videoPath;
-      
-      // Eagerly load audio files
-      const audioElement = document.createElement('audio');
-      audioElement.preload = 'auto';
-      audioElement.src = audioPath;
-      
-      // These elements will be garbage collected after this function ends,
-      // but the browser should cache the media files after they're requested
     });
-    
-    // Set preload attribute on all media elements
-    const videoRefs = {
-      trump1: trump1VideoRef,
-      zelensky: zelenskyVideoRef,
-      trump2: trump2VideoRef,
-      vance: vanceVideoRef
-    };
-    
-    const audioRefs = {
-      trump1: trump1AudioRef,
-      zelensky: zelenskyAudioRef,
-      trump2: trump2AudioRef,
-      vance: vanceAudioRef
-    };
-    
-    // Set preload attribute once refs are available
-    sequence.forEach(seg => {
-      const videoRef = videoRefs[seg].current;
-      const audioRef = audioRefs[seg].current;
-      
-      if (videoRef) {
-        videoRef.preload = 'auto';
-        videoRef.load();
-      }
-      
-      if (audioRef) {
-        audioRef.preload = 'auto';
-        audioRef.load();
-      }
-    });
-    
-  }, [sequence]);
+  }, []);
   
   // Initialize media elements once available
   useEffect(() => {
@@ -215,56 +170,11 @@ const ContinuousPlayer = ({
   
   // Handle media loading for each segment
   const handleMediaLoaded = useCallback((segment: CharacterSegment) => {
-    // Only mark as loaded if readyState indicates it's actually ready
-    const videoRef = 
-      segment === 'trump1' ? trump1VideoRef.current :
-      segment === 'zelensky' ? zelenskyVideoRef.current :
-      segment === 'trump2' ? trump2VideoRef.current : vanceVideoRef.current;
-    
-    const audioRef = 
-      segment === 'trump1' ? trump1AudioRef.current :
-      segment === 'zelensky' ? zelenskyAudioRef.current :
-      segment === 'trump2' ? trump2AudioRef.current : vanceAudioRef.current;
-    
-    // Check if media is actually loaded enough for playback
-    const videoReady = videoRef && videoRef.readyState >= 2;
-    const audioReady = audioRef && audioRef.readyState >= 2;
-    
-    if (videoReady && audioReady) {
-      setLoadedSegments(prev => ({
-        ...prev,
-        [segment]: true
-      }));
-      console.log(`${segment} media loaded and ready for playback`);
-    } else {
-      // Schedule another check
-      console.log(`${segment} media loaded event fired but not fully ready yet`);
-      
-      // Set up listeners to check again when ready
-      if (videoRef && videoRef.readyState < 2) {
-        videoRef.addEventListener('canplay', () => {
-          if (audioRef && audioRef.readyState >= 2) {
-            setLoadedSegments(prev => ({
-              ...prev,
-              [segment]: true
-            }));
-            console.log(`${segment} media fully loaded (video ready)`);
-          }
-        }, { once: true });
-      }
-      
-      if (audioRef && audioRef.readyState < 2) {
-        audioRef.addEventListener('canplay', () => {
-          if (videoRef && videoRef.readyState >= 2) {
-            setLoadedSegments(prev => ({
-              ...prev,
-              [segment]: true
-            }));
-            console.log(`${segment} media fully loaded (audio ready)`);
-          }
-        }, { once: true });
-      }
-    }
+    setLoadedSegments(prev => ({
+      ...prev,
+      [segment]: true
+    }));
+    console.log(`${segment} media loaded`);
   }, []);
   
   // Determine which segment we're in based on the current time
