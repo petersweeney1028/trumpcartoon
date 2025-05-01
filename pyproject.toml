@@ -6,6 +6,7 @@ requires-python = ">=3.11"
 dependencies = [
     "ffmpeg>=1.4",
     "ffmpeg-python>=0.2.0",
+    "fish-audio-sdk>=2025.4.2",
     "moviepy>=2.1.2",
     "pydub>=0.25.1",
     "requests>=2.32.3",

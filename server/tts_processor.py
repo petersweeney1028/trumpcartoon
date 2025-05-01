@@ -7,10 +7,11 @@ import time
 from uuid import uuid4
 
 try:
-    import requests
+    from fish_audio_sdk import Session, TTSRequest
+    FISH_SDK_AVAILABLE = True
 except ImportError:
-    print("Warning: requests module not found. API calls will not work.")
-    requests = None
+    print("Warning: fish_audio_sdk module not found. Install with pip install fish-audio-sdk")
+    FISH_SDK_AVAILABLE = False
 
 try:
     from pydub import AudioSegment
@@ -36,7 +37,7 @@ FISH_VOICE_MAPPING = {
 
 def generate_tts(character, text, api_key=None):
     """
-    Generate TTS audio using Fish.audio API
+    Generate TTS audio using Fish.audio SDK
     
     Args:
         character (str): Character identifier (trump, zelensky, vance)
@@ -49,9 +50,9 @@ def generate_tts(character, text, api_key=None):
     # Use the provided API key or get from environment variable
     api_key = api_key or os.environ.get("FISH_AUDIO_API_KEY")
     
-    # Check if we have the API key and requests module
-    if not api_key or requests is None:
-        print("Warning: No Fish.audio API key provided or requests module missing. Using mock TTS generation.")
+    # Check if we have the API key and Fish SDK
+    if not api_key or not FISH_SDK_AVAILABLE:
+        print("Warning: No Fish.audio API key provided or SDK missing. Using mock TTS generation.")
         return generate_mock_tts(character, text)
     
     try:
@@ -62,31 +63,28 @@ def generate_tts(character, text, api_key=None):
         filename = f"{character}_{file_id}.mp3"
         output_path = os.path.join(VOICES_DIR, filename)
         
-        # Select the appropriate voice for the character
-        voice_id = FISH_VOICE_MAPPING.get(character, "en_male_neutral")
+        # Select the appropriate voice reference ID for the character
+        reference_id = FISH_VOICE_MAPPING.get(character)
         
-        # Make API request to Fish.audio
-        url = "https://api.fish.audio/v1/tts"
-        payload = {
-            "text": text,
-            "voice_id": voice_id
-        }
-        headers = {
-            "Authorization": f"Bearer {api_key}",
-            "Content-Type": "application/json"
-        }
+        if not reference_id:
+            print(f"Warning: No voice model found for {character}. Using mock TTS generation.")
+            return generate_mock_tts(character, text)
         
-        print(f"Sending request to Fish.audio API with voice: {voice_id}")
-        # This will only run if requests module is available
-        response = requests.post(url, json=payload, headers=headers)
+        print(f"Using Fish Audio model ID: {reference_id} for character: {character}")
         
-        if response.status_code != 200:
-            print(f"Error from Fish.audio API: {response.status_code} - {response.text}")
-            raise Exception(f"Fish.audio API error: {response.text}")
+        # Create a Fish Audio SDK session
+        session = Session(api_key)
         
-        # Save the audio file
+        # Create a TTS request with the reference ID
+        tts_request = TTSRequest(
+            reference_id=reference_id,
+            text=text
+        )
+        
+        # Generate the audio and save to file
         with open(output_path, "wb") as f:
-            f.write(response.content)
+            for chunk in session.tts(tts_request):
+                f.write(chunk)
         
         print(f"TTS audio saved to {output_path}")
         return f"/voices/{filename}"
