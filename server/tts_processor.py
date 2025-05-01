@@ -208,7 +208,11 @@ def main():
         # Generate TTS for all lines
         result = generate_all_tts(script, api_key)
         
-        # Output the result as JSON
+        # Clear any previous output to stdout
+        sys.stdout = open(os.devnull, 'w')
+        
+        # Restore stdout and print only the JSON result
+        sys.stdout = sys.__stdout__
         print(json.dumps(result))
         
     except Exception as e:

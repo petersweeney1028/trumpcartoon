@@ -164,10 +164,14 @@ def main():
             print("Error: Missing required fields in input JSON")
             sys.exit(1)
         
+        # Clear any previous output to stdout
+        sys.stdout = open(os.devnull, 'w')
+        
         # Process the video
         result = process_video(remix_id, audio_files)
         
-        # Output the result as JSON
+        # Restore stdout and print only the JSON result
+        sys.stdout = sys.__stdout__
         print(json.dumps(result))
         
     except Exception as e:

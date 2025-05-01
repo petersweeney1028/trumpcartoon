@@ -59,8 +59,24 @@ async function runPythonScript(scriptPath: string, jsonInput: any): Promise<any>
       }
       
       try {
-        // Try to parse the output as JSON
-        const result = JSON.parse(stdoutData.trim());
+        // Try to find JSON output in the stdout string
+        // Look for the last line that starts with '{' and ends with '}'
+        const lines = stdoutData.trim().split('\n');
+        let jsonLine = '';
+        
+        for (let i = lines.length - 1; i >= 0; i--) {
+          const line = lines[i].trim();
+          if (line.startsWith('{') && line.endsWith('}')) {
+            jsonLine = line;
+            break;
+          }
+        }
+        
+        if (!jsonLine) {
+          throw new Error('No JSON output found in Python script output');
+        }
+        
+        const result = JSON.parse(jsonLine);
         resolve(result);
       } catch (error) {
         console.error('Error parsing Python script output as JSON:', error);
