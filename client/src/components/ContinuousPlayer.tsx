@@ -169,13 +169,13 @@ const ContinuousPlayer = ({
   }, [loadedSegments]);
   
   // Handle media loading for each segment
-  const handleMediaLoaded = (segment: CharacterSegment) => {
+  const handleMediaLoaded = useCallback((segment: CharacterSegment) => {
     setLoadedSegments(prev => ({
       ...prev,
       [segment]: true
     }));
     console.log(`${segment} media loaded`);
-  };
+  }, []);
   
   // Determine which segment we're in based on the current time
   const getSegmentForTime = (time: number): CharacterSegment => {
@@ -204,7 +204,7 @@ const ContinuousPlayer = ({
   }, [currentTime, totalDuration]);
   
   // Handle play/pause for all media elements
-  const playAllMedia = () => {
+  const playAllMedia = useCallback(() => {
     // Play the current segment's video and audio
     const segmentToPlay = currentSegment;
     const videoRefs = {
@@ -267,9 +267,9 @@ const ContinuousPlayer = ({
         }
       }
     });
-  };
+  }, [currentSegment, currentTime, segmentBoundaries, sequence]);
   
-  const pauseAllMedia = () => {
+  const pauseAllMedia = useCallback(() => {
     const videoRefs = {
       trump1: trump1VideoRef,
       zelensky: zelenskyVideoRef,
@@ -288,7 +288,7 @@ const ContinuousPlayer = ({
       if (videoRefs[seg].current) videoRefs[seg].current.pause();
       if (audioRefs[seg].current) audioRefs[seg].current.pause();
     });
-  };
+  }, [sequence]);
   
   // Update time tracking
   useEffect(() => {
@@ -340,7 +340,7 @@ const ContinuousPlayer = ({
     } else {
       pauseAllMedia();
     }
-  }, [isPlaying]);
+  }, [isPlaying, onPlayPauseToggle, playAllMedia, pauseAllMedia]);
   
   // Handle segment change
   useEffect(() => {
@@ -350,13 +350,13 @@ const ContinuousPlayer = ({
     if (isPlaying) {
       playAllMedia();
     }
-  }, [currentSegment]);
+  }, [currentSegment, totalDuration, isPlaying, playAllMedia]);
   
-  const togglePlayPause = () => {
+  const togglePlayPause = useCallback(() => {
     setIsPlaying(!isPlaying);
-  };
+  }, [isPlaying]);
   
-  const toggleMute = () => {
+  const toggleMute = useCallback(() => {
     const audioRefs = {
       trump1: trump1AudioRef,
       zelensky: zelenskyAudioRef,
@@ -371,15 +371,15 @@ const ContinuousPlayer = ({
         audioRefs[seg].current.muted = !isMuted;
       }
     });
-  };
+  }, [isMuted, sequence]);
   
-  const formatTime = (timeInSeconds: number) => {
+  const formatTime = useCallback((timeInSeconds: number) => {
     const minutes = Math.floor(timeInSeconds / 60);
     const seconds = Math.floor(timeInSeconds % 60);
     return `${minutes}:${seconds < 10 ? '0' : ''}${seconds}`;
-  };
+  }, []);
   
-  const handleProgressClick = (e: React.MouseEvent<HTMLDivElement>) => {
+  const handleProgressClick = useCallback((e: React.MouseEvent<HTMLDivElement>) => {
     if (totalDuration === 0) return;
     
     const progressBar = e.currentTarget;
@@ -397,9 +397,9 @@ const ContinuousPlayer = ({
     if (isPlaying) {
       playAllMedia();
     }
-  };
+  }, [totalDuration, getSegmentForTime, isPlaying, playAllMedia]);
   
-  const skipToSegment = (segment: CharacterSegment) => {
+  const skipToSegment = useCallback((segment: CharacterSegment) => {
     if (totalDuration === 0) return;
     
     const { start } = segmentBoundaries[segment];
@@ -414,14 +414,14 @@ const ContinuousPlayer = ({
     if (isPlaying) {
       setTimeout(() => playAllMedia(), 0);
     }
-  };
+  }, [totalDuration, segmentBoundaries, currentSegment, isPlaying, playAllMedia]);
   
   // Use memoized handlers to avoid setting state during render
-  const handleMouseEnter = React.useCallback(() => {
+  const handleMouseEnter = useCallback(() => {
     setShowControls(true);
   }, []);
   
-  const handleMouseLeave = React.useCallback(() => {
+  const handleMouseLeave = useCallback(() => {
     setShowControls(isPlaying ? false : true);
   }, [isPlaying]);
   
