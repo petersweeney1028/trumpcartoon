@@ -1,4 +1,4 @@
-import { useState, useRef, useEffect } from "react";
+import React, { useState, useRef, useEffect, useCallback } from "react";
 import { ClipInfo } from "@shared/schema";
 
 interface ContinuousPlayerProps {
@@ -416,12 +416,21 @@ const ContinuousPlayer = ({
     }
   };
   
+  // Use memoized handlers to avoid setting state during render
+  const handleMouseEnter = React.useCallback(() => {
+    setShowControls(true);
+  }, []);
+  
+  const handleMouseLeave = React.useCallback(() => {
+    setShowControls(isPlaying ? false : true);
+  }, [isPlaying]);
+  
   return (
     <div 
       ref={containerRef}
       className="bg-dark rounded-lg overflow-hidden shadow-lg relative"
-      onMouseEnter={() => setShowControls(true)}
-      onMouseLeave={() => setShowControls(isPlaying ? false : true)}
+      onMouseEnter={handleMouseEnter}
+      onMouseLeave={handleMouseLeave}
     >
       <div className="relative pt-[56.25%]">
         {/* All Video Players stacked on top of each other */}
