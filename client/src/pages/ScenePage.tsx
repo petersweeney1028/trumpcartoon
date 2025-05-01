@@ -3,6 +3,7 @@ import { useQuery } from "@tanstack/react-query";
 import { useRoute } from "wouter";
 import VideoPlayer from "@/components/VideoPlayer";
 import SequencePlayer from "@/components/SequencePlayer";
+import DebugPlayer from "@/components/DebugPlayer";
 import SharePanel from "@/components/SharePanel";
 import RemixDetails from "@/components/RemixDetails";
 import ScriptDisplay from "@/components/ScriptDisplay";
@@ -78,19 +79,14 @@ const ScenePage = () => {
         <div className="flex flex-col lg:flex-row gap-8">
           {/* Left Column: Video Player */}
           <div className="lg:w-7/12">
-            {/* Debugging log in useEffect */}
-            {useEffect(() => {
-              console.log('Remix from ScenePage:', remix);
-            }, [remix])}
             {remix.clipInfo ? (
               <>
                 <div className="bg-yellow-100 p-2 mb-2 text-sm rounded-md">
-                  Using SequencePlayer with clipInfo available
+                  Debug Mode: Testing Clip Playback
                 </div>
-                <SequencePlayer
+                <DebugPlayer
                   clipInfo={remix.clipInfo}
                   script={remix.script}
-                  onPlayPauseToggle={handlePlayPauseToggle}
                 />
               </>
             ) : (

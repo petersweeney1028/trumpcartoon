@@ -212,6 +212,7 @@ const SequencePlayer = ({
         {/* Video Player */}
         <video
           ref={videoRef}
+          src={currentClipInfo.video}
           className="absolute inset-0 w-full h-full object-cover"
           onClick={togglePlayPause}
           playsInline
@@ -223,10 +224,11 @@ const SequencePlayer = ({
         {/* Hidden Audio Player */}
         <audio 
           ref={audioRef}
+          src={currentClipInfo.audio}
           crossOrigin="anonymous"
           muted={isMuted}
           controls // Add controls for debugging
-          style={{ display: 'none' }} // Hide the controls but keep them accessible
+          style={{ position: 'absolute', bottom: 0, left: 0, opacity: 0.5, zIndex: 10 }} // Make it visible but discreet for debugging
         />
         
         {/* Play button overlay (visible when paused) */}
