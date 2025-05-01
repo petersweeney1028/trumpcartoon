@@ -31,12 +31,16 @@ const SimplePlayer = ({
   const containerRef = useRef<HTMLDivElement>(null);
   
   // Get sequence of characters and their start times
+  // Use longer durations to match audio file lengths
   const sequence = [
     { character: 'trump1', start: 0, caption: script.trump1 },
     { character: 'zelensky', start: 7, caption: script.zelensky },
     { character: 'trump2', start: 14, caption: script.trump2 },
     { character: 'vance', start: 21, caption: script.vance }
   ];
+  
+  // Total duration of all segments
+  const totalDuration = 28; // Ensure we have enough time for all segments
   
   // Create proper paths by prepending /static to the paths
   const getStaticPath = (path: string) => {
@@ -88,44 +92,156 @@ const SimplePlayer = ({
     }
   }, [isPlaying, onPlayPauseToggle]);
   
+  // Create refs for audio elements
+  const trump1AudioRef = useRef<HTMLAudioElement>(null);
+  const zelenskyAudioRef = useRef<HTMLAudioElement>(null);
+  const trump2AudioRef = useRef<HTMLAudioElement>(null);
+  const vanceAudioRef = useRef<HTMLAudioElement>(null);
+  
+  // Audio source paths
+  const audioSources = {
+    trump1: getStaticPath(clipInfo.trump1Audio),
+    zelensky: getStaticPath(clipInfo.zelenskyAudio),
+    trump2: getStaticPath(clipInfo.trump2Audio),
+    vance: getStaticPath(clipInfo.vanceAudio),
+  };
+  
+  // Get current segment based on time
+  const getCurrentSegment = (time: number): { character: string, index: number } => {
+    for (let i = sequence.length - 1; i >= 0; i--) {
+      if (time >= sequence[i].start) {
+        return { character: sequence[i].character, index: i };
+      }
+    }
+    return { character: sequence[0].character, index: 0 };
+  };
+  
   // Track video time and progress
   useEffect(() => {
     const video = videoRef.current;
     if (!video) return;
     
+    // Make sure duration is set correctly
+    setDuration(totalDuration);
+    
     const handleTimeUpdate = () => {
-      setCurrentTime(video.currentTime);
-      setProgress((video.currentTime / (video.duration || 1)) * 100);
+      // If we reach the video end, loop it to continue playing
+      if (video.currentTime >= video.duration - 0.1) {
+        video.currentTime = 0;
+      }
+      
+      // Use our custom time tracking
+      setCurrentTime(prev => {
+        const newTime = prev + 0.1; // Increment by a small amount each update
+        
+        // Reset when we reach total duration
+        if (newTime >= totalDuration) {
+          setIsPlaying(false);
+          if (onPlayPauseToggle) onPlayPauseToggle(false);
+          return 0;
+        }
+        
+        // Get current segment
+        const { character } = getCurrentSegment(newTime);
+        
+        // Potentially start playing appropriate audio
+        if (Math.floor(prev) !== Math.floor(newTime)) {
+          // At each whole second boundary, check if we need to switch audio
+          const audioRefs = {
+            trump1: trump1AudioRef,
+            zelensky: zelenskyAudioRef,
+            trump2: trump2AudioRef,
+            vance: vanceAudioRef
+          };
+          
+          // Get current segment
+          const currentSegRef = audioRefs[character as keyof typeof audioRefs];
+          
+          // Try to play this segment's audio
+          if (currentSegRef?.current && !isMuted) {
+            Object.values(audioRefs).forEach(ref => {
+              if (ref && ref !== currentSegRef && ref.current) {
+                ref.current.pause();
+              }
+            });
+            
+            if (currentSegRef.current.paused) {
+              currentSegRef.current.currentTime = 0;
+              currentSegRef.current.play().catch(e => {
+                console.error(`Error playing ${character} audio:`, e);
+              });
+            }
+          }
+        }
+        
+        return newTime;
+      });
+      
+      // Calculate progress based on our total duration
+      setProgress((currentTime / totalDuration) * 100);
     };
     
-    const handleDurationChange = () => {
-      setDuration(video.duration);
-    };
+    // Simulate timeupdate with our own interval for more precise control
+    let intervalId: number;
+    if (isPlaying) {
+      intervalId = window.setInterval(handleTimeUpdate, 100);
+    }
     
     const handleEnded = () => {
-      setIsPlaying(false);
-      if (onPlayPauseToggle) onPlayPauseToggle(false);
+      // Don't end playback when video ends, we'll handle that ourselves
+      if (video.currentTime >= video.duration - 0.1) {
+        video.currentTime = 0;
+        video.play().catch(err => console.error('Error looping video:', err));
+      }
     };
     
-    video.addEventListener('timeupdate', handleTimeUpdate);
-    video.addEventListener('durationchange', handleDurationChange);
     video.addEventListener('ended', handleEnded);
     
     return () => {
-      video.removeEventListener('timeupdate', handleTimeUpdate);
-      video.removeEventListener('durationchange', handleDurationChange);
+      if (intervalId) clearInterval(intervalId);
       video.removeEventListener('ended', handleEnded);
     };
-  }, [onPlayPauseToggle]);
+  }, [isPlaying, currentTime, totalDuration, isMuted, onPlayPauseToggle]);
   
   const togglePlayPause = () => {
     setIsPlaying(!isPlaying);
   };
   
   const toggleMute = () => {
+    // Toggle mute state
+    const newMutedState = !isMuted;
+    setIsMuted(newMutedState);
+    
+    // Mute/unmute video
     if (videoRef.current) {
-      videoRef.current.muted = !isMuted;
-      setIsMuted(!isMuted);
+      videoRef.current.muted = newMutedState;
+    }
+    
+    // Mute/unmute all audio elements
+    [trump1AudioRef, zelenskyAudioRef, trump2AudioRef, vanceAudioRef].forEach(ref => {
+      if (ref.current) {
+        ref.current.muted = newMutedState;
+      }
+    });
+    
+    // If we're unmuting and playing, try to start the appropriate audio
+    if (!newMutedState && isPlaying) {
+      const { character } = getCurrentSegment(currentTime);
+      const audioRefs = {
+        trump1: trump1AudioRef,
+        zelensky: zelenskyAudioRef,
+        trump2: trump2AudioRef,
+        vance: vanceAudioRef
+      };
+      
+      const currentAudioRef = audioRefs[character as keyof typeof audioRefs];
+      if (currentAudioRef?.current) {
+        // Try to play the current segment's audio
+        currentAudioRef.current.currentTime = 0;
+        currentAudioRef.current.play().catch(err => {
+          console.error(`Error playing ${character} audio after unmute:`, err);
+        });
+      }
     }
   };
   
@@ -141,10 +257,17 @@ const SimplePlayer = ({
     const progressBar = e.currentTarget;
     const rect = progressBar.getBoundingClientRect();
     const clickPosition = (e.clientX - rect.left) / rect.width;
-    const newTime = clickPosition * (videoRef.current.duration || 0);
     
+    // Use our total duration, not video duration
+    const newTime = clickPosition * totalDuration;
+    
+    setCurrentTime(newTime);
+    
+    // Update video position proportionally
     if (videoRef.current) {
-      videoRef.current.currentTime = newTime;
+      // Map our custom timeline to video time
+      const videoPosition = (newTime % videoRef.current.duration) || 0;
+      videoRef.current.currentTime = videoPosition;
     }
   };
   
@@ -152,8 +275,24 @@ const SimplePlayer = ({
     if (!videoRef.current) return;
     if (index < 0 || index >= sequence.length) return;
     
-    videoRef.current.currentTime = sequence[index].start;
+    // Set our custom time to the segment start
+    const newTime = sequence[index].start;
+    setCurrentTime(newTime); 
     setCurrentCaption(sequence[index].caption);
+    
+    // Map this to video position
+    if (videoRef.current) {
+      // Loop video if needed
+      const videoPos = newTime % videoRef.current.duration; 
+      videoRef.current.currentTime = videoPos;
+    }
+    
+    // If we're playing, make sure we're still playing
+    if (isPlaying && videoRef.current) {
+      videoRef.current.play().catch(err => {
+        console.error('Error playing video after skip:', err);
+      });
+    }
   };
   
   return (
@@ -316,6 +455,40 @@ const SimplePlayer = ({
             <p className="text-white font-medium text-lg">{currentCaption}</p>
           </div>
         </div>
+        
+        {/* Hidden audio players for each character */}
+        <audio 
+          ref={trump1AudioRef}
+          src={audioSources.trump1}
+          preload="auto"
+          muted={isMuted}
+          style={{ display: 'none' }}
+          onError={(e) => console.error('Trump1 audio load error:', e)}
+        />
+        <audio 
+          ref={zelenskyAudioRef}
+          src={audioSources.zelensky}
+          preload="auto"
+          muted={isMuted}
+          style={{ display: 'none' }}
+          onError={(e) => console.error('Zelensky audio load error:', e)}
+        />
+        <audio 
+          ref={trump2AudioRef}
+          src={audioSources.trump2}
+          preload="auto"
+          muted={isMuted}
+          style={{ display: 'none' }}
+          onError={(e) => console.error('Trump2 audio load error:', e)}
+        />
+        <audio 
+          ref={vanceAudioRef}
+          src={audioSources.vance}
+          preload="auto"
+          muted={isMuted}
+          style={{ display: 'none' }}
+          onError={(e) => console.error('Vance audio load error:', e)}
+        />
       </div>
     </div>
   );
