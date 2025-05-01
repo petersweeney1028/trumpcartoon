@@ -177,18 +177,26 @@ const ContinuousPlayer = ({
     console.log(`${segment} media loaded`);
   };
   
+  // Determine which segment we're in based on the current time
+  const getSegmentForTime = (time: number): CharacterSegment => {
+    if (totalDuration === 0) return 'trump1';
+    
+    for (const segment of sequence) {
+      const { start, end } = segmentBoundaries[segment];
+      if (time >= start && time < end) {
+        return segment;
+      }
+    }
+    return 'trump1'; // Default to first segment
+  };
+  
   // Update current segment based on playback time
   useEffect(() => {
     if (totalDuration === 0) return;
     
-    for (const segment of sequence) {
-      const { start, end } = segmentBoundaries[segment];
-      if (currentTime >= start && currentTime < end) {
-        if (currentSegment !== segment) {
-          setCurrentSegment(segment);
-        }
-        break;
-      }
+    const appropriateSegment = getSegmentForTime(currentTime);
+    if (currentSegment !== appropriateSegment) {
+      setCurrentSegment(appropriateSegment);
     }
     
     // Update progress
@@ -379,16 +387,12 @@ const ContinuousPlayer = ({
     const clickPosition = (e.clientX - rect.left) / rect.width;
     const newTime = clickPosition * totalDuration;
     
-    setCurrentTime(newTime);
-    
     // Find which segment this time belongs to
-    for (const segment of sequence) {
-      const { start, end } = segmentBoundaries[segment];
-      if (newTime >= start && newTime < end) {
-        setCurrentSegment(segment);
-        break;
-      }
-    }
+    const newSegment = getSegmentForTime(newTime);
+    
+    // Set current time first, then the segment will be updated in the effect
+    setCurrentTime(newTime);
+    setCurrentSegment(newSegment);
     
     if (isPlaying) {
       playAllMedia();
@@ -399,11 +403,16 @@ const ContinuousPlayer = ({
     if (totalDuration === 0) return;
     
     const { start } = segmentBoundaries[segment];
+    // Set time first, then update segment to avoid React warnings
     setCurrentTime(start);
-    setCurrentSegment(segment);
+    
+    // Make sure we use the right segment
+    if (currentSegment !== segment) {
+      setCurrentSegment(segment);
+    }
     
     if (isPlaying) {
-      playAllMedia();
+      setTimeout(() => playAllMedia(), 0);
     }
   };
   
