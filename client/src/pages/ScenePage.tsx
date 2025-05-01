@@ -3,6 +3,7 @@ import { useQuery } from "@tanstack/react-query";
 import { useRoute } from "wouter";
 import VideoPlayer from "@/components/VideoPlayer";
 import SequencePlayer from "@/components/SequencePlayer";
+import ContinuousPlayer from "@/components/ContinuousPlayer";
 import DebugPlayer from "@/components/DebugPlayer";
 import SharePanel from "@/components/SharePanel";
 import RemixDetails from "@/components/RemixDetails";
@@ -82,9 +83,9 @@ const ScenePage = () => {
             {remix.clipInfo ? (
               <>
                 <div className="bg-yellow-100 p-2 mb-2 text-sm rounded-md">
-                  Now using SequencePlayer with fixed static file paths
+                  Now using ContinuousPlayer for seamless playback
                 </div>
-                <SequencePlayer
+                <ContinuousPlayer
                   clipInfo={remix.clipInfo}
                   script={remix.script}
                   onPlayPauseToggle={handlePlayPauseToggle}
