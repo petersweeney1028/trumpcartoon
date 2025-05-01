@@ -64,7 +64,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       console.log(`TTS generated successfully for remix ${id}:`, audioFiles);
       
       // Create the final video with the audio files
-      const { videoUrl } = await createVideo(
+      const { videoUrl, clipInfo } = await createVideo(
         id,
         audioFiles.trump1,
         audioFiles.zelensky,
@@ -73,6 +73,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       );
       
       console.log(`Video generated successfully for remix ${id}: ${videoUrl}`);
+      console.log(`Clip info prepared for remix ${id}:`, clipInfo);
       
       // Save rot to storage
       const remix = await storage.createRemix({
@@ -82,7 +83,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
         vanceCaresAbout: validatedData.vanceCaresAbout,
         script,
         videoUrl,
-        audioUrl: "" // We don't return a separate audio URL anymore
+        audioUrl: "", // We don't return a separate audio URL anymore
+        clipInfo: clipInfo
       });
       
       res.json({ 

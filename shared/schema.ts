@@ -27,6 +27,20 @@ export const scriptSchema = z.object({
 
 export type Script = z.infer<typeof scriptSchema>;
 
+// Define the ClipInfo schema
+export const clipInfoSchema = z.object({
+  trump1Video: z.string(),
+  trump1Audio: z.string(),
+  zelenskyVideo: z.string(),
+  zelenskyAudio: z.string(),
+  trump2Video: z.string(),
+  trump2Audio: z.string(),
+  vanceVideo: z.string(),
+  vanceAudio: z.string(),
+});
+
+export type ClipInfo = z.infer<typeof clipInfoSchema>;
+
 // Remix table
 export const remixes = pgTable("remixes", {
   id: serial("id").primaryKey(),
@@ -37,6 +51,7 @@ export const remixes = pgTable("remixes", {
   script: jsonb("script").$type<Script>().notNull(),
   videoUrl: text("video_url").notNull(),
   audioUrl: text("audio_url").notNull(),
+  clipInfo: jsonb("clip_info").$type<ClipInfo>(),
   views: integer("views").default(0),
   createdAt: timestamp("created_at").defaultNow().notNull(),
 });
