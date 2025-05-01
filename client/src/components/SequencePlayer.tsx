@@ -136,26 +136,39 @@ const SequencePlayer = ({
       console.log('- Video src:', videoRef.current.src);
       console.log('- Audio src:', audioRef.current.src);
       
-      // Try to synchronize video and audio playback
-      const playPromises = [
+      // Play video first
+      if (videoRef.current) {
+        videoRef.current.currentTime = 0; // Always start from the beginning
         videoRef.current.play().catch(err => {
           console.error('Video play error:', err);
-          return Promise.reject(err);
-        }),
-        audioRef.current.play().catch(err => {
-          console.error('Audio play error:', err);
-          return Promise.reject(err);
-        })
-      ];
+        });
+      }
       
-      Promise.all(playPromises).catch((err) => {
-        console.error('Media playback error:', err);
-        // Autoplay was prevented
-        setIsPlaying(false);
-        if (onPlayPauseToggle) {
-          onPlayPauseToggle(false);
+      // Then try to play audio (after a slight delay)
+      setTimeout(() => {
+        if (audioRef.current) {
+          audioRef.current.play().catch(err => {
+            console.error('Audio play error:', err);
+            
+            // If audio fails to play, try to reload and play again
+            if (audioRef.current) {
+              audioRef.current.load();
+              setTimeout(() => {
+                if (audioRef.current) {
+                  audioRef.current.play().catch(e => {
+                    console.error("Secondary audio play attempt failed:", e);
+                    // Autoplay was prevented
+                    setIsPlaying(false);
+                    if (onPlayPauseToggle) {
+                      onPlayPauseToggle(false);
+                    }
+                  });
+                }
+              }, 300);
+            }
+          });
         }
-      });
+      }, 100);
     } else {
       console.error('Video or audio ref is not available');
     }
@@ -224,6 +237,8 @@ const SequencePlayer = ({
           crossOrigin="anonymous"
           muted // We'll use the separate audio element for sound
           loop // Loop the video clip while the audio plays
+          preload="auto" // Ensure video preloads
+          onError={(e) => console.error(`Video load error for ${currentSegment}:`, e)}
         />
         
         {/* Hidden Audio Player */}
@@ -232,8 +247,8 @@ const SequencePlayer = ({
           src={currentClipInfo.audio}
           crossOrigin="anonymous"
           muted={isMuted}
-          controls // Add controls for debugging
-          style={{ position: 'absolute', bottom: 0, left: 0, opacity: 0.5, zIndex: 10 }} // Make it visible but discreet for debugging
+          preload="auto" // Ensure audio preloads
+          onError={(e) => console.error(`Audio load error for ${currentSegment}:`, e)}
         />
         
         {/* Play button overlay (visible when paused) */}

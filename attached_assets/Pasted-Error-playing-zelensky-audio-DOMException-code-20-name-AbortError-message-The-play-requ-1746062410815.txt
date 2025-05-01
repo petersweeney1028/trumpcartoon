@@ -1,0 +1,136 @@
+Error playing zelensky audio: 
+DOMException {code: 20, name: "AbortError", message: "The play() request was interrupted by a call to pause(). https://goo.gl/LdLk22", INDEX_SIZE_ERR: 1, DOMSTRING_SIZE_ERR: 2, …}
+
+Error playing zelensky audio: 
+DOMException {code: 20, name: "AbortError", message: "The play() request was interrupted by a call to pause(). https://goo.gl/LdLk22", INDEX_SIZE_ERR: 1, DOMSTRING_SIZE_ERR: 2, …}
+
+Error playing zelensky audio: 
+DOMException {code: 20, name: "AbortError", message: "The play() request was interrupted by a call to pause(). https://goo.gl/LdLk22", INDEX_SIZE_ERR: 1, DOMSTRING_SIZE_ERR: 2, …}
+
+Error playing zelensky audio: 
+DOMException {code: 20, name: "AbortError", message: "The play() request was interrupted by a call to pause(). https://goo.gl/LdLk22", INDEX_SIZE_ERR: 1, DOMSTRING_SIZE_ERR: 2, …}
+
+Error playing zelensky audio: 
+DOMException {code: 20, name: "AbortError", message: "The play() request was interrupted by a call to pause(). https://goo.gl/LdLk22", INDEX_SIZE_ERR: 1, DOMSTRING_SIZE_ERR: 2, …}
+
+Error playing zelensky audio: 
+DOMException {code: 20, name: "AbortError", message: "The play() request was interrupted by a call to pause(). https://goo.gl/LdLk22", INDEX_SIZE_ERR: 1, DOMSTRING_SIZE_ERR: 2, …}
+
+at t.value (https://019aa004-b6ae-477d-acc2-27f1d11c9b74-00-scvishtg577s.riker.replit.dev/__replco/static/devtools/eruda/3.2.3/eruda.js:2:17465)
+at new t (https://019aa004-b6ae-477d-acc2-27f1d11c9b74-00-scvishtg577s.riker.replit.dev/__replco/static/devtools/eruda/3.2.3/eruda.js:2:12630)
+at t.value (https://019aa004-b6ae-477d-acc2-27f1d11c9b74-00-scvishtg577s.riker.replit.dev/__replco/static/devtools/eruda/3.2.3/eruda.js:2:32766)
+at https://019aa004-b6ae-477d-acc2-27f1d11c9b74-00-scvishtg577s.riker.replit.dev/__replco/static/devtools/eruda/3.2.3/eruda.js:2:34400
+Error playing zelensky audio: 
+DOMException {code: 20, name: "AbortError", message: "The play() request was interrupted by a call to pause(). https://goo.gl/LdLk22", INDEX_SIZE_ERR: 1, DOMSTRING_SIZE_ERR: 2, …}
+
+Error playing zelensky audio: 
+DOMException {code: 20, name: "AbortError", message: "The play() request was interrupted by a call to pause(). https://goo.gl/LdLk22", INDEX_SIZE_ERR: 1, DOMSTRING_SIZE_ERR: 2, …}
+
+Error playing zelensky audio: 
+DOMException {code: 20, name: "AbortError", message: "The play() request was interrupted by a call to pause(). https://goo.gl/LdLk22", INDEX_SIZE_ERR: 1, DOMSTRING_SIZE_ERR: 2, …}
+
+Secondary audio play attempt failed
+zelensky media loaded
+Segment boundaries calculated: 
+Object {trump1: {…}, zelensky: {…}, trump2: {…}, vance: {…}}
+Total duration: 25.965563000000003
+Warning: Cannot update a component (&#x60;ScenePage&#x60;) while rendering a different component (&#x60;ContinuousPlayer&#x60;). To locate the bad setState() call inside &#x60;ContinuousPlayer&#x60;, follow the stack trace as described in https://reactjs.org/link/setstate-in-render
+    at ContinuousPlayer (https://019aa004-b6ae-477d-acc2-27f1d11c9b74-00-scvishtg577s.riker.replit.dev/src/components/ContinuousPlayer.tsx?t=1746062242471:20:3)
+    at div
+    at div
+    at div
+    at div
+    at ScenePage (https://019aa004-b6ae-477d-acc2-27f1d11c9b74-00-scvishtg577s.riker.replit.dev/src/pages/ScenePage.tsx?t=1746062242471:30:22)
+    at Route (https://019aa004-b6ae-477d-acc2-27f1d11c9b74-00-scvishtg577s.riker.replit.dev/@fs/home/runner/workspace/node_modules/.vite/deps/wouter.js?v=4fab9eb8:323:16)
+    at Switch (https://019aa004-b6ae-477d-acc2-27f1d11c9b74-00-scvishtg577s.riker.replit.dev/@fs/home/runner/workspace/node_modules/.vite/deps/wouter.js?v=4fab9eb8:379:17)
+    at main
+    at div
+    at Router
+    at Provider (https://019aa004-b6ae-477d-acc2-27f1d11c9b74-00-scvishtg577s.riker.replit.dev/@fs/home/runner/workspace/node_modules/.vite/deps/chunk-AK3A7DOF.js?v=4fab9eb8:42:15)
+    at TooltipProvider (https://019aa004-b6ae-477d-acc2-27f1d11c9b74-00-scvishtg577s.riker.replit.dev/@fs/home/runner/workspace/node_modules/.vite/deps/@radix-ui_react-tooltip.js?v=4fab9eb8:2251:5)
+    at QueryClientProvider (https://019aa004-b6ae-477d-acc2-27f1d11c9b74-00-scvishtg577s.riker.replit.dev/@fs/home/runner/workspace/node_modules/.vite/deps/@tanstack_react-query.js?v=4fab9eb8:2805:3)
+    at App
+Error playing vance video: 
+DOMException {code: 20, name: "AbortError", message: "The play() request was interrupted by a call to pause(). https://goo.gl/LdLk22", INDEX_SIZE_ERR: 1, DOMSTRING_SIZE_ERR: 2, …}
+
+Error playing vance video: 
+DOMException {code: 20, name: "AbortError", message: "The play() request was interrupted by a call to pause(). https://goo.gl/LdLk22", INDEX_SIZE_ERR: 1, DOMSTRING_SIZE_ERR: 2, …}
+
+Error playing vance video: 
+DOMException {code: 20, name: "AbortError", message: "The play() request was interrupted by a call to pause(). https://goo.gl/LdLk22", INDEX_SIZE_ERR: 1, DOMSTRING_SIZE_ERR: 2, …}
+
+Error playing vance video: 
+DOMException {code: 20, name: "AbortError", message: "The play() request was interrupted by a call to pause(). https://goo.gl/LdLk22", INDEX_SIZE_ERR: 1, DOMSTRING_SIZE_ERR: 2, …}
+
+Error playing vance video: 
+DOMException {code: 20, name: "AbortError", message: "The play() request was interrupted by a call to pause(). https://goo.gl/LdLk22", INDEX_SIZE_ERR: 1, DOMSTRING_SIZE_ERR: 2, …}
+
+Error playing vance video: 
+DOMException {code: 20, name: "AbortError", message: "The play() request was interrupted by a call to pause(). https://goo.gl/LdLk22", INDEX_SIZE_ERR: 1, DOMSTRING_SIZE_ERR: 2, …}
+
+Error playing vance video: 
+DOMException {code: 20, name: "AbortError", message: "The play() request was interrupted by a call to pause(). https://goo.gl/LdLk22", INDEX_SIZE_ERR: 1, DOMSTRING_SIZE_ERR: 2, …}
+
+Error playing vance video: 
+DOMException {code: 20, name: "AbortError", message: "The play() request was interrupted by a call to pause(). https://goo.gl/LdLk22", INDEX_SIZE_ERR: 1, DOMSTRING_SIZE_ERR: 2, …}
+
+Error playing vance video: 
+DOMException {code: 20, name: "AbortError", message: "The play() request was interrupted by a call to pause(). https://goo.gl/LdLk22", INDEX_SIZE_ERR: 1, DOMSTRING_SIZE_ERR: 2, …}
+
+Error playing vance video: 
+DOMException {code: 20, name: "AbortError", message: "The play() request was interrupted by a call to pause(). https://goo.gl/LdLk22", INDEX_SIZE_ERR: 1, DOMSTRING_SIZE_ERR: 2, …}
+
+Error playing vance video: 
+DOMException {code: 20, name: "AbortError", message: "The play() request was interrupted by a call to pause(). https://goo.gl/LdLk22", INDEX_SIZE_ERR: 1, DOMSTRING_SIZE_ERR: 2, …}
+
+Error playing vance video: 
+DOMException {code: 20, name: "AbortError", message: "The play() request was interrupted by a call to pause(). https://goo.gl/LdLk22", INDEX_SIZE_ERR: 1, DOMSTRING_SIZE_ERR: 2, …}
+
+Error playing vance video: 
+DOMException {code: 20, name: "AbortError", message: "The play() request was interrupted by a call to pause(). https://goo.gl/LdLk22", INDEX_SIZE_ERR: 1, DOMSTRING_SIZE_ERR: 2, …}
+
+Error playing vance video: 
+DOMException {code: 20, name: "AbortError", message: "The play() request was interrupted by a call to pause(). https://goo.gl/LdLk22", INDEX_SIZE_ERR: 1, DOMSTRING_SIZE_ERR: 2, …}
+
+Error playing vance video: 
+DOMException {code: 20, name: "AbortError", message: "The play() request was interrupted by a call to pause(). https://goo.gl/LdLk22", INDEX_SIZE_ERR: 1, DOMSTRING_SIZE_ERR: 2, …}
+
+Error playing vance video: 
+DOMException {code: 20, name: "AbortError", message: "The play() request was interrupted by a call to pause(). https://goo.gl/LdLk22", INDEX_SIZE_ERR: 1, DOMSTRING_SIZE_ERR: 2, …}
+
+Error playing vance video: 
+DOMException {code: 20, name: "AbortError", message: "The play() request was interrupted by a call to pause(). https://goo.gl/LdLk22", INDEX_SIZE_ERR: 1, DOMSTRING_SIZE_ERR: 2, …}
+
+Error playing vance video: 
+DOMException {code: 20, name: "AbortError", message: "The play() request was interrupted by a call to pause(). https://goo.gl/LdLk22", INDEX_SIZE_ERR: 1, DOMSTRING_SIZE_ERR: 2, …}
+
+Error playing vance video: 
+DOMException {code: 20, name: "AbortError", message: "The play() request was interrupted by a call to pause(). https://goo.gl/LdLk22", INDEX_SIZE_ERR: 1, DOMSTRING_SIZE_ERR: 2, …}
+
+Error playing vance video: 
+DOMException {code: 20, name: "AbortError", message: "The play() request was interrupted by a call to pause(). https://goo.gl/LdLk22", INDEX_SIZE_ERR: 1, DOMSTRING_SIZE_ERR: 2, …}
+
+Error playing vance video: 
+DOMException {code: 20, name: "AbortError", message: "The play() request was interrupted by a call to pause(). https://goo.gl/LdLk22", INDEX_SIZE_ERR: 1, DOMSTRING_SIZE_ERR: 2, …}
+
+Error playing vance video: 
+DOMException {code: 20, name: "AbortError", message: "The play() request was interrupted by a call to pause(). https://goo.gl/LdLk22", INDEX_SIZE_ERR: 1, DOMSTRING_SIZE_ERR: 2, …}
+
+Error playing vance video: 
+DOMException {code: 20, name: "AbortError", message: "The play() request was interrupted by a call to pause(). https://goo.gl/LdLk22", INDEX_SIZE_ERR: 1, DOMSTRING_SIZE_ERR: 2, …}
+
+Error playing vance video: 
+DOMException {code: 20, name: "AbortError", message: "The play() request was interrupted by a call to pause(). https://goo.gl/LdLk22", INDEX_SIZE_ERR: 1, DOMSTRING_SIZE_ERR: 2, …}
+
+Error playing vance video: 
+DOMException {code: 20, name: "AbortError", message: "The play() request was interrupted by a call to pause(). https://goo.gl/LdLk22", INDEX_SIZE_ERR: 1, DOMSTRING_SIZE_ERR: 2, …}
+
+Error playing vance video: 
+DOMException {code: 20, name: "AbortError", message: "The play() request was interrupted by a call to pause(). https://goo.gl/LdLk22", INDEX_SIZE_ERR: 1, DOMSTRING_SIZE_ERR: 2, …}
+
+Error playing vance video: 
+DOMException {code: 20, name: "AbortError", message: "The play() request was interrupted by a call to pause(). https://goo.gl/LdLk22", INDEX_SIZE_ERR: 1, DOMSTRING_SIZE_ERR: 2, …}
+
+Error playing vance video: 
+DOMException {code: 20, name: "AbortError", message: "The play() request was interrupted by a call to pause(). https://goo.gl/LdLk22", INDEX_SIZE_ERR: 1, DOMSTRING_SIZE_ERR: 2, …}
+
