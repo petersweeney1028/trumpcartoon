@@ -35,7 +35,7 @@ FISH_VOICE_MAPPING = {
     "vance": "86d3aee7cd9b4aab8cd8e54c3d35492b"  # JD Vance custom voice model
 }
 
-def generate_tts(character, text, api_key=None):
+def generate_tts(character, text, api_key=None, max_retries=2):
     """
     Generate TTS audio using Fish.audio SDK
     
@@ -43,6 +43,7 @@ def generate_tts(character, text, api_key=None):
         character (str): Character identifier (trump, zelensky, vance)
         text (str): Text to convert to speech
         api_key (str): Fish.audio API key (optional, will use env var if not provided)
+        max_retries: Maximum number of retries if generation fails
     
     Returns:
         str: Path to the generated audio file
@@ -55,44 +56,71 @@ def generate_tts(character, text, api_key=None):
         print("Warning: No Fish.audio API key provided or SDK missing. Using mock TTS generation.")
         return generate_mock_tts(character, text)
     
-    try:
-        print(f"Generating TTS for {character}: '{text}'")
-        
-        # Generate a unique filename
-        file_id = str(uuid4()).replace("-", "")[:8]
-        filename = f"{character}_{file_id}.mp3"
-        output_path = os.path.join(VOICES_DIR, filename)
-        
-        # Select the appropriate voice reference ID for the character
-        reference_id = FISH_VOICE_MAPPING.get(character)
-        
-        if not reference_id:
-            print(f"Warning: No voice model found for {character}. Using mock TTS generation.")
-            return generate_mock_tts(character, text)
-        
-        print(f"Using Fish Audio model ID: {reference_id} for character: {character}")
-        
-        # Create a Fish Audio SDK session
-        session = Session(api_key)
-        
-        # Create a TTS request with the reference ID
-        tts_request = TTSRequest(
-            reference_id=reference_id,
-            text=text
-        )
-        
-        # Generate the audio and save to file
-        with open(output_path, "wb") as f:
-            for chunk in session.tts(tts_request):
-                f.write(chunk)
-        
-        print(f"TTS audio saved to {output_path}")
-        return f"/voices/{filename}"
+    # Limit text length to avoid errors (max 200 characters)
+    if len(text) > 200:
+        print(f"Warning: Text too long ({len(text)} chars). Truncating to 200 chars.")
+        text = text[:197] + "..."
     
-    except Exception as e:
-        print(f"Error generating TTS: {str(e)}")
-        # Fall back to mock TTS if the real API fails
-        return generate_mock_tts(character, text)
+    for attempt in range(max_retries):
+        try:
+            print(f"Generating TTS for {character}: '{text}' (Attempt {attempt+1}/{max_retries})")
+            
+            # Generate a unique filename
+            file_id = str(uuid4()).replace("-", "")[:8]
+            filename = f"{character}_{file_id}.mp3"
+            output_path = os.path.join(VOICES_DIR, filename)
+            
+            # Select the appropriate voice reference ID for the character
+            reference_id = FISH_VOICE_MAPPING.get(character)
+            
+            if not reference_id:
+                print(f"Warning: No voice model found for {character}. Using mock TTS generation.")
+                return generate_mock_tts(character, text)
+            
+            print(f"Using Fish Audio model ID: {reference_id} for character: {character}")
+            
+            # Create a Fish Audio SDK session
+            session = Session(api_key)
+            
+            # Create a TTS request with the reference ID
+            tts_request = TTSRequest(
+                reference_id=reference_id,
+                text=text
+            )
+            
+            # Generate the audio and save to file
+            audio_chunks = []
+            with open(output_path, "wb") as f:
+                for chunk in session.tts(tts_request):
+                    audio_chunks.append(chunk)
+                    f.write(chunk)
+            
+            # Check if the file size is suspiciously large (more than 200KB for a short phrase)
+            file_size = os.path.getsize(output_path)
+            if file_size > 200000 and len(text) < 100:
+                print(f"Warning: Generated audio file is suspiciously large ({file_size} bytes)")
+                if attempt < max_retries - 1:
+                    print("Retrying...")
+                    os.remove(output_path)
+                    continue
+                else:
+                    print("All retries failed, using mock TTS instead")
+                    return generate_mock_tts(character, text)
+            
+            print(f"TTS audio saved to {output_path} ({file_size} bytes)")
+            return f"/voices/{filename}"
+            
+        except Exception as error:
+            print(f"Error generating TTS: {str(error)}")
+            if attempt < max_retries - 1:
+                print("Retrying due to error...")
+                continue
+            # Fall back to mock TTS if all retries fail
+            break
+    
+    # If we've exhausted all retries or encountered errors
+    print("All TTS generation attempts failed, using mock TTS instead")
+    return generate_mock_tts(character, text)
 
 def generate_mock_tts(character, text):
     """
