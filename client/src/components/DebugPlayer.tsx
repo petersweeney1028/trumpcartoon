@@ -40,8 +40,14 @@ const DebugPlayer = ({ clipInfo, script }: DebugPlayerProps) => {
 
   // Function to create proper static paths
   const getStaticPath = (path: string) => {
-    if (path.startsWith('/static')) return path;
-    return `/static${path}`;
+    // Handle paths that start with /clips or /voices - add /static prefix
+    if (path.startsWith('/clips/') || path.startsWith('/voices/')) {
+      return `/static${path}`;
+    }
+    // Path already has static prefix
+    if (path.startsWith('/static/')) return path;
+    // Default case - just return as is
+    return path;
   };
 
   return (
