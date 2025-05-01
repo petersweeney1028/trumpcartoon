@@ -2,12 +2,13 @@ import { useState, useEffect } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { useRoute } from "wouter";
 import VideoPlayer from "@/components/VideoPlayer";
+import SequencePlayer from "@/components/SequencePlayer";
 import SharePanel from "@/components/SharePanel";
 import RemixDetails from "@/components/RemixDetails";
 import ScriptDisplay from "@/components/ScriptDisplay";
 import RotGrid from "@/components/RotGrid";
 import { apiRequest } from "@/lib/queryClient";
-import { Remix } from "@shared/schema";
+import { Remix, ClipInfo } from "@shared/schema";
 
 const ScenePage = () => {
   const [, params] = useRoute("/scene/:id");
@@ -17,12 +18,12 @@ const ScenePage = () => {
   const [currentCaption, setCurrentCaption] = useState("");
   
   // Get remix details
-  const { data: remix, isLoading } = useQuery({
+  const { data: remix, isLoading } = useQuery<Remix>({
     queryKey: [`/api/remixes/${remixId}`],
   });
   
   // Get related remixes
-  const { data: relatedRemixes } = useQuery({
+  const { data: relatedRemixes } = useQuery<Remix[]>({
     queryKey: ["/api/remixes/related", remixId],
     enabled: !!remix,
   });
@@ -42,41 +43,10 @@ const ScenePage = () => {
     }
   }, [remixId]);
   
-  // Update captions based on playback
-  useEffect(() => {
-    if (!isPlaying || !remix) return;
-    
-    let captionTimers: NodeJS.Timeout[] = [];
-    
-    // Set up timers for captions
-    captionTimers.push(
-      setTimeout(() => {
-        setCurrentCaption(remix.script.trump1);
-      }, 0)
-    );
-    
-    captionTimers.push(
-      setTimeout(() => {
-        setCurrentCaption(remix.script.zelensky);
-      }, 8000)
-    );
-    
-    captionTimers.push(
-      setTimeout(() => {
-        setCurrentCaption(remix.script.trump2);
-      }, 14000)
-    );
-    
-    captionTimers.push(
-      setTimeout(() => {
-        setCurrentCaption(remix.script.vance);
-      }, 20000)
-    );
-    
-    return () => {
-      captionTimers.forEach(timer => clearTimeout(timer));
-    };
-  }, [isPlaying, remix]);
+  // We no longer need caption timing as SequencePlayer handles that internally
+  const handlePlayPauseToggle = (playing: boolean) => {
+    setIsPlaying(playing);
+  };
   
   if (isLoading) {
     return (
@@ -101,18 +71,26 @@ const ScenePage = () => {
         <div className="flex flex-col lg:flex-row gap-8">
           {/* Left Column: Video Player */}
           <div className="lg:w-7/12">
-            <VideoPlayer
-              videoUrl={remix.videoUrl}
-              currentCaption={currentCaption}
-              isPlaying={isPlaying}
-              onPlayPauseToggle={setIsPlaying}
-            />
-            <SharePanel remixId={remix.id} />
+            {remix.clipInfo ? (
+              <SequencePlayer
+                clipInfo={remix.clipInfo}
+                script={remix.script}
+                onPlayPauseToggle={handlePlayPauseToggle}
+              />
+            ) : (
+              <VideoPlayer
+                videoUrl={remix.videoUrl}
+                currentCaption={currentCaption}
+                isPlaying={isPlaying}
+                onPlayPauseToggle={setIsPlaying}
+              />
+            )}
+            <SharePanel remixId={remix.id.toString()} />
           </div>
           
           {/* Right Column: Rot Details */}
           <div className="lg:w-5/12">
-            <RemixDetails remix={remix as Remix} />
+            <RemixDetails remix={remix} />
             <ScriptDisplay script={remix.script} />
           </div>
         </div>
@@ -121,7 +99,7 @@ const ScenePage = () => {
       {/* More Rots Section */}
       {relatedRemixes && relatedRemixes.length > 0 && (
         <RotGrid
-          remixes={relatedRemixes as Remix[]}
+          remixes={relatedRemixes}
           title="Similar Rots"
         />
       )}
