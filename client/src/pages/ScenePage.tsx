@@ -4,6 +4,7 @@ import { useRoute } from "wouter";
 import VideoPlayer from "@/components/VideoPlayer";
 import SequencePlayer from "@/components/SequencePlayer";
 import ContinuousPlayer from "@/components/ContinuousPlayer";
+import SimplePlayer from "@/components/SimplePlayer";
 import DebugPlayer from "@/components/DebugPlayer";
 import SharePanel from "@/components/SharePanel";
 import RemixDetails from "@/components/RemixDetails";
@@ -83,13 +84,38 @@ const ScenePage = () => {
             {remix.clipInfo ? (
               <>
                 <div className="bg-yellow-100 p-2 mb-2 text-sm rounded-md">
-                  Now using ContinuousPlayer for seamless playback
+                  Using SimplePlayer (muted video with segment timestamps)
                 </div>
-                <ContinuousPlayer
+                <SimplePlayer
                   clipInfo={remix.clipInfo}
                   script={remix.script}
                   onPlayPauseToggle={handlePlayPauseToggle}
                 />
+                
+                <div className="hidden">
+                  {/* Hidden fallback players for debugging */}
+                  <details className="mt-2 p-2 bg-gray-100 rounded-md">
+                    <summary className="font-semibold cursor-pointer">Show ContinuousPlayer (Advanced)</summary>
+                    <div className="mt-2">
+                      <ContinuousPlayer
+                        clipInfo={remix.clipInfo}
+                        script={remix.script}
+                        onPlayPauseToggle={() => {}}
+                      />
+                    </div>
+                  </details>
+                
+                  <details className="mt-2 p-2 bg-gray-100 rounded-md">
+                    <summary className="font-semibold cursor-pointer">Show SequencePlayer (Sequential)</summary>
+                    <div className="mt-2">
+                      <SequencePlayer
+                        clipInfo={remix.clipInfo}
+                        script={remix.script}
+                        onPlayPauseToggle={() => {}}
+                      />
+                    </div>
+                  </details>
+                </div>
               </>
             ) : (
               <VideoPlayer
