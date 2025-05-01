@@ -230,63 +230,88 @@ const ContinuousPlayer = ({
       });
     }
     
-    // Show only the current segment's video
+    // Hide all videos first except current
     sequence.forEach(seg => {
       if (videoRefs[seg].current) {
         const video = videoRefs[seg].current;
-        if (seg === segmentToPlay) {
-          video.style.opacity = '1';
-          video.style.zIndex = '1';
-          
-          const { start } = segmentBoundaries[seg];
-          const segmentTime = currentTime - start;
-          video.currentTime = segmentTime;
-          
-          // Make sure the video is loaded before attempting to play
-          if (video.readyState >= 2) {
-            video.play().catch(err => {
-              console.error(`Error playing ${seg} video:`, err);
-            });
-          } else {
-            console.log(`${seg} video not ready yet, setting oncanplay listener`);
-            video.oncanplay = () => {
-              video.play().catch(err => {
-                console.error(`Error playing ${seg} video after load:`, err);
-              });
-            };
-          }
-        } else {
+        // Preload all videos beforehand to avoid pausing
+        if (seg !== segmentToPlay) {
           video.style.opacity = '0';
           video.style.zIndex = '0';
-          video.pause();
+          // Keep videos playing in the background to avoid cold start issues
+          video.currentTime = 0;
+          video.play().catch(e => {}); // Silent error handling for background videos
         }
       }
       
-      if (audioRefs[seg].current) {
-        const audio = audioRefs[seg].current;
-        if (seg === segmentToPlay) {
-          const { start } = segmentBoundaries[seg];
-          const segmentTime = currentTime - start;
-          audio.currentTime = segmentTime;
-          
-          // Make sure the audio is loaded before attempting to play
-          if (audio.readyState >= 2) {
-            audio.play().catch(err => {
-              console.error(`Error playing ${seg} audio:`, err);
-            });
-          } else {
-            console.log(`${seg} audio not ready yet, setting oncanplay listener`);
-            audio.oncanplay = () => {
-              audio.play().catch(err => {
-                console.error(`Error playing ${seg} audio after load:`, err);
-              });
-            };
-          }
-        } else {
-          audio.pause();
-        }
+      // Pause all audio except current
+      if (audioRefs[seg].current && seg !== segmentToPlay) {
+        audioRefs[seg].current.pause();
       }
     });
+    
+    // Now handle the current segment specifically
+    const currentVideo = videoRefs[segmentToPlay].current;
+    const currentAudio = audioRefs[segmentToPlay].current;
+    
+    if (currentVideo) {
+      // Set video properties
+      currentVideo.style.opacity = '1';
+      currentVideo.style.zIndex = '1';
+      currentVideo.loop = true; // Ensure video loops if audio is longer
+      
+      // Set video time
+      const { start } = segmentBoundaries[segmentToPlay];
+      const segmentTime = currentTime - start;
+      
+      // Attempt to play video first to avoid pausing
+      const playVideoPromise = currentVideo.play().catch(err => {
+        console.error(`Error playing ${segmentToPlay} video:`, err);
+      });
+      
+      // Set the time after ensuring playback has started
+      if (segmentTime > 0) {
+        // Use the play promise to ensure we don't interrupt playback
+        if (playVideoPromise) {
+          playVideoPromise.then(() => {
+            currentVideo.currentTime = segmentTime;
+          }).catch(() => {
+            // If play failed, try to set time anyway
+            currentVideo.currentTime = segmentTime;
+          });
+        } else {
+          currentVideo.currentTime = segmentTime;
+        }
+      }
+    }
+    
+    // Handle audio separately from video to avoid synchronization issues
+    if (currentAudio) {
+      const { start } = segmentBoundaries[segmentToPlay];
+      const segmentTime = currentTime - start;
+      
+      // Create a workaround for potentially corrupted audio
+      try {
+        // First try to play without setting time to avoid corruption issues
+        currentAudio.play().then(() => {
+          if (segmentTime > 0) {
+            currentAudio.currentTime = segmentTime;
+          }
+        }).catch(err => {
+          console.error(`Error playing ${segmentToPlay} audio:`, err);
+          
+          // Fallback: Reload audio element if it failed to play
+          currentAudio.load();
+          setTimeout(() => {
+            currentAudio.play().catch(e => {
+              console.error("Secondary audio play attempt failed");
+            });
+          }, 300);
+        });
+      } catch (e) {
+        console.error("Error in audio playback logic:", e);
+      }
+    }
   }, [currentSegment, currentTime, segmentBoundaries, sequence]);
   
   const pauseAllMedia = useCallback(() => {
@@ -465,11 +490,13 @@ const ContinuousPlayer = ({
                 className="w-full h-full object-cover"
                 muted // We'll use the separate audio element for sound
                 loop // Loop the video clip while the audio plays
+                preload="auto" // Ensure videos are preloaded
                 style={{ 
                   opacity: currentSegment === segment ? 1 : 0,
                   transition: 'opacity 0.2s ease-out'
                 }}
                 onLoadedData={() => handleMediaLoaded(segment)}
+                onError={(e) => console.error(`Error loading ${segment} video:`, e)}
                 onClick={togglePlayPause}
                 playsInline
                 crossOrigin="anonymous"
@@ -488,7 +515,9 @@ const ContinuousPlayer = ({
             src={mediaPaths[segment].audio}
             crossOrigin="anonymous"
             muted={isMuted}
+            preload="auto"
             onLoadedData={() => handleMediaLoaded(segment)}
+            onError={(e) => console.error(`Error loading ${segment} audio:`, e)}
             style={{ display: 'none' }}
           />
         ))}
