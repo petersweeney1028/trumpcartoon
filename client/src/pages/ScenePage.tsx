@@ -43,6 +43,13 @@ const ScenePage = () => {
     }
   }, [remixId]);
   
+  // Debug log for remix data
+  useEffect(() => {
+    if (remix) {
+      console.log('Remix from ScenePage:', remix);
+    }
+  }, [remix]);
+  
   // We no longer need caption timing as SequencePlayer handles that internally
   const handlePlayPauseToggle = (playing: boolean) => {
     setIsPlaying(playing);
@@ -71,12 +78,21 @@ const ScenePage = () => {
         <div className="flex flex-col lg:flex-row gap-8">
           {/* Left Column: Video Player */}
           <div className="lg:w-7/12">
+            {/* Debugging log in useEffect */}
+            {useEffect(() => {
+              console.log('Remix from ScenePage:', remix);
+            }, [remix])}
             {remix.clipInfo ? (
-              <SequencePlayer
-                clipInfo={remix.clipInfo}
-                script={remix.script}
-                onPlayPauseToggle={handlePlayPauseToggle}
-              />
+              <>
+                <div className="bg-yellow-100 p-2 mb-2 text-sm rounded-md">
+                  Using SequencePlayer with clipInfo available
+                </div>
+                <SequencePlayer
+                  clipInfo={remix.clipInfo}
+                  script={remix.script}
+                  onPlayPauseToggle={handlePlayPauseToggle}
+                />
+              </>
             ) : (
               <VideoPlayer
                 videoUrl={remix.videoUrl}

@@ -31,12 +31,32 @@ const SequencePlayer = ({
   const audioRef = useRef<HTMLAudioElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);
   
+  // Log received clip info and script
+  useEffect(() => {
+    console.log('SequencePlayer mounted with clipInfo:', clipInfo);
+    console.log('Script:', script);
+  }, []);
+  
+  // Create proper paths by prepending /static to the paths
+  const getStaticPath = (path: string) => {
+    // Add '/static' prefix if not already there
+    if (path.startsWith('/static')) return path;
+    return `/static${path}`;
+  };
+  
   // Map current segment to the appropriate video and audio
   const currentClipInfo = {
-    video: clipInfo[`${currentSegment}Video`],
-    audio: clipInfo[`${currentSegment}Audio`],
+    video: getStaticPath(clipInfo[`${currentSegment}Video`]),
+    audio: getStaticPath(clipInfo[`${currentSegment}Audio`]),
     caption: script[currentSegment],
   };
+  
+  // Log the current segment and paths
+  useEffect(() => {
+    console.log(`Current segment: ${currentSegment}`);
+    console.log('Video path:', currentClipInfo.video);
+    console.log('Audio path:', currentClipInfo.audio);
+  }, [currentSegment]);
   
   // Get the sequence order
   const sequence: CharacterSegment[] = ['trump1', 'zelensky', 'trump2', 'vance'];
@@ -107,19 +127,32 @@ const SequencePlayer = ({
   
   const playMedia = () => {
     if (videoRef.current && audioRef.current) {
+      console.log('Playing media:');
+      console.log('- Video src:', videoRef.current.src);
+      console.log('- Audio src:', audioRef.current.src);
+      
       // Try to synchronize video and audio playback
       const playPromises = [
-        videoRef.current.play(),
-        audioRef.current.play()
+        videoRef.current.play().catch(err => {
+          console.error('Video play error:', err);
+          return Promise.reject(err);
+        }),
+        audioRef.current.play().catch(err => {
+          console.error('Audio play error:', err);
+          return Promise.reject(err);
+        })
       ];
       
-      Promise.all(playPromises).catch(() => {
+      Promise.all(playPromises).catch((err) => {
+        console.error('Media playback error:', err);
         // Autoplay was prevented
         setIsPlaying(false);
         if (onPlayPauseToggle) {
           onPlayPauseToggle(false);
         }
       });
+    } else {
+      console.error('Video or audio ref is not available');
     }
   };
   
@@ -182,14 +215,18 @@ const SequencePlayer = ({
           className="absolute inset-0 w-full h-full object-cover"
           onClick={togglePlayPause}
           playsInline
+          crossOrigin="anonymous"
           muted // We'll use the separate audio element for sound
           loop // Loop the video clip while the audio plays
         />
         
         {/* Hidden Audio Player */}
         <audio 
-          ref={audioRef} 
+          ref={audioRef}
+          crossOrigin="anonymous"
           muted={isMuted}
+          controls // Add controls for debugging
+          style={{ display: 'none' }} // Hide the controls but keep them accessible
         />
         
         {/* Play button overlay (visible when paused) */}
