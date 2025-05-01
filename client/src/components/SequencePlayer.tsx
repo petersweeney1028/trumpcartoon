@@ -39,9 +39,14 @@ const SequencePlayer = ({
   
   // Create proper paths by prepending /static to the paths
   const getStaticPath = (path: string) => {
-    // Add '/static' prefix if not already there
-    if (path.startsWith('/static')) return path;
-    return `/static${path}`;
+    // Handle paths that start with /clips or /voices - add /static prefix
+    if (path.startsWith('/clips/') || path.startsWith('/voices/')) {
+      return `/static${path}`;
+    }
+    // Path already has static prefix
+    if (path.startsWith('/static/')) return path;
+    // Default case - just return as is
+    return path;
   };
   
   // Map current segment to the appropriate video and audio

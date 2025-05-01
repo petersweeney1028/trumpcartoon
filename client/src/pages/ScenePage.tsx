@@ -82,11 +82,12 @@ const ScenePage = () => {
             {remix.clipInfo ? (
               <>
                 <div className="bg-yellow-100 p-2 mb-2 text-sm rounded-md">
-                  Debug Mode: Testing Clip Playback
+                  Now using SequencePlayer with fixed static file paths
                 </div>
-                <DebugPlayer
+                <SequencePlayer
                   clipInfo={remix.clipInfo}
                   script={remix.script}
+                  onPlayPauseToggle={handlePlayPauseToggle}
                 />
               </>
             ) : (
