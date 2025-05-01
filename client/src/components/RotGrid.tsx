@@ -1,3 +1,4 @@
+import { useState, useRef, useEffect } from "react";
 import { Link } from "wouter";
 import { formatDistanceToNow } from "date-fns";
 import { Remix } from "@shared/schema";
@@ -7,18 +8,48 @@ interface RotCardProps {
 }
 
 const RotCard = ({ remix }: RotCardProps) => {
+  const [isHovering, setIsHovering] = useState(false);
+  const videoRef = useRef<HTMLVideoElement>(null);
+  
   const formattedDate = remix.createdAt 
     ? formatDistanceToNow(new Date(remix.createdAt), { addSuffix: true })
     : "recently";
+    
+  // Play/pause video on hover
+  useEffect(() => {
+    const video = videoRef.current;
+    if (!video) return;
+    
+    if (isHovering) {
+      video.currentTime = 0;
+      video.play().catch(err => console.log("Preview play prevented:", err));
+    } else {
+      video.pause();
+    }
+  }, [isHovering]);
 
   return (
     <Link href={`/scene/${remix.id}`}>
-      <div className="bg-white rounded-lg overflow-hidden shadow-md hover:shadow-lg transition-shadow cursor-pointer">
+      <div 
+        className="bg-white rounded-lg overflow-hidden shadow-md hover:shadow-lg transition-shadow cursor-pointer"
+        onMouseEnter={() => setIsHovering(true)}
+        onMouseLeave={() => setIsHovering(false)}
+      >
         <div className="relative pt-[56.25%] bg-dark">
           {/* Video thumbnail */}
-          <div className="absolute inset-0 bg-gradient-to-br from-gray-800 to-gray-900 flex items-center justify-center text-primary font-heading text-xl">
-            {remix.topic}
-          </div>
+          {remix.videoUrl ? (
+            <video 
+              ref={videoRef}
+              src={remix.videoUrl}
+              className="absolute inset-0 w-full h-full object-cover"
+              muted
+              playsInline
+            />
+          ) : (
+            <div className="absolute inset-0 bg-gradient-to-br from-gray-800 to-gray-900 flex items-center justify-center text-primary font-heading text-xl">
+              {remix.topic}
+            </div>
+          )}
           
           <div className="absolute inset-0 flex items-center justify-center">
             <button className="w-12 h-12 bg-primary rounded-full flex items-center justify-center shadow-lg">
