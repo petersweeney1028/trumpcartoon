@@ -54,8 +54,16 @@ const SimplePlayer = ({
     return path;
   };
   
-  // Use the original video path
-  const videoUrl = getStaticPath(clipInfo.trump1Video);
+  // Video paths for each segment
+  const videoPaths = {
+    trump1: getStaticPath(clipInfo.trump1Video),
+    zelensky: getStaticPath(clipInfo.zelenskyVideo),
+    trump2: getStaticPath(clipInfo.trump2Video),
+    vance: getStaticPath(clipInfo.vanceVideo)
+  };
+  
+  // Initialize with the first video
+  const [currentVideoSrc, setCurrentVideoSrc] = useState(videoPaths.trump1);
   
   // Set caption based on current time
   useEffect(() => {
@@ -116,6 +124,9 @@ const SimplePlayer = ({
     return { character: sequence[0].character, index: 0 };
   };
   
+  // Track the current character segment
+  const [currentVideoSegment, setCurrentVideoSegment] = useState<string>('trump1');
+
   // Track video time and progress
   useEffect(() => {
     const video = videoRef.current;
@@ -125,11 +136,6 @@ const SimplePlayer = ({
     setDuration(totalDuration);
     
     const handleTimeUpdate = () => {
-      // If we reach the video end, loop it to continue playing
-      if (video.currentTime >= video.duration - 0.1) {
-        video.currentTime = 0;
-      }
-      
       // Use our custom time tracking
       setCurrentTime(prev => {
         const newTime = prev + 0.1; // Increment by a small amount each update
@@ -143,6 +149,32 @@ const SimplePlayer = ({
         
         // Get current segment
         const { character } = getCurrentSegment(newTime);
+        
+        // If we've moved to a new segment, switch the video source
+        if (character !== currentVideoSegment) {
+          console.log(`Switching from ${currentVideoSegment} to ${character}`);
+          
+          // Update video source if we changed segments
+          if (videoRef.current) {
+            const wasPlaying = !videoRef.current.paused;
+            
+            // Update the video src state which will trigger the video element to change 
+            setCurrentVideoSrc(videoPaths[character as keyof typeof videoPaths]);
+            
+            // Reset time to the beginning of the segment
+            videoRef.current.currentTime = 0;
+            
+            // Set this before attempting to play to avoid blocking
+            setCurrentVideoSegment(character);
+            
+            // If we were playing, resume playback in the new segment
+            if (wasPlaying) {
+              videoRef.current.play().catch(e => {
+                console.error(`Error playing ${character} video:`, e);
+              });
+            }
+          }
+        }
         
         // Potentially start playing appropriate audio
         if (Math.floor(prev) !== Math.floor(newTime)) {
@@ -201,7 +233,7 @@ const SimplePlayer = ({
       if (intervalId) clearInterval(intervalId);
       video.removeEventListener('ended', handleEnded);
     };
-  }, [isPlaying, currentTime, totalDuration, isMuted, onPlayPauseToggle]);
+  }, [isPlaying, currentTime, totalDuration, isMuted, onPlayPauseToggle, currentVideoSegment, videoPaths]);
   
   const togglePlayPause = () => {
     setIsPlaying(!isPlaying);
@@ -261,13 +293,59 @@ const SimplePlayer = ({
     // Use our total duration, not video duration
     const newTime = clickPosition * totalDuration;
     
+    // Get current segment based on new time
+    const { character, index } = getCurrentSegment(newTime);
+    
+    // Update the caption
+    setCurrentCaption(sequence[index].caption);
+    
+    // If we clicked into a different character segment, update the video
+    if (character !== currentVideoSegment) {
+      setCurrentVideoSrc(videoPaths[character as keyof typeof videoPaths]);
+      setCurrentVideoSegment(character);
+      
+      // Reset video to beginning of this segment
+      if (videoRef.current) {
+        videoRef.current.currentTime = 0;
+      }
+    } else {
+      // We're in the same character segment, just update the time
+      if (videoRef.current) {
+        // Map our custom timeline to video time within this segment
+        const segmentStart = sequence[index].start;
+        const relativePosition = newTime - segmentStart;
+        videoRef.current.currentTime = relativePosition;
+      }
+    }
+    
+    // Update the current time
     setCurrentTime(newTime);
     
-    // Update video position proportionally
-    if (videoRef.current) {
-      // Map our custom timeline to video time
-      const videoPosition = (newTime % videoRef.current.duration) || 0;
-      videoRef.current.currentTime = videoPosition;
+    // Also handle audio like in skipToSegment
+    const audioRefs = {
+      trump1: trump1AudioRef,
+      zelensky: zelenskyAudioRef,
+      trump2: trump2AudioRef,
+      vance: vanceAudioRef
+    };
+    
+    // Stop all audio first
+    Object.values(audioRefs).forEach(ref => {
+      if (ref?.current) {
+        ref.current.pause();
+        ref.current.currentTime = 0;
+      }
+    });
+    
+    // Start the right audio if not muted and we're playing
+    if (!isMuted && isPlaying) {
+      const audioRef = audioRefs[character as keyof typeof audioRefs];
+      if (audioRef?.current) {
+        audioRef.current.currentTime = 0;
+        audioRef.current.play().catch(err => {
+          console.error(`Error playing ${character} audio after progress click:`, err);
+        });
+      }
     }
   };
   
@@ -275,16 +353,24 @@ const SimplePlayer = ({
     if (!videoRef.current) return;
     if (index < 0 || index >= sequence.length) return;
     
-    // Set our custom time to the segment start
-    const newTime = sequence[index].start;
-    setCurrentTime(newTime); 
-    setCurrentCaption(sequence[index].caption);
+    // Get the segment we're skipping to
+    const segment = sequence[index];
+    const character = segment.character;
     
-    // Map this to video position
+    // Set our custom time to the segment start
+    const newTime = segment.start;
+    setCurrentTime(newTime); 
+    setCurrentCaption(segment.caption);
+    
+    // Update the video source if needed
+    if (character !== currentVideoSegment) {
+      setCurrentVideoSrc(videoPaths[character as keyof typeof videoPaths]);
+      setCurrentVideoSegment(character);
+    }
+    
+    // Reset video position
     if (videoRef.current) {
-      // Loop video if needed
-      const videoPos = newTime % videoRef.current.duration; 
-      videoRef.current.currentTime = videoPos;
+      videoRef.current.currentTime = 0;
     }
     
     // If we're playing, make sure we're still playing
@@ -292,6 +378,33 @@ const SimplePlayer = ({
       videoRef.current.play().catch(err => {
         console.error('Error playing video after skip:', err);
       });
+    }
+    
+    // Also play appropriate audio
+    const audioRefs = {
+      trump1: trump1AudioRef,
+      zelensky: zelenskyAudioRef,
+      trump2: trump2AudioRef,
+      vance: vanceAudioRef
+    };
+    
+    // Stop all audio first
+    Object.values(audioRefs).forEach(ref => {
+      if (ref?.current) {
+        ref.current.pause();
+        ref.current.currentTime = 0;
+      }
+    });
+    
+    // Start the right audio if not muted
+    if (!isMuted) {
+      const audioRef = audioRefs[character as keyof typeof audioRefs];
+      if (audioRef?.current) {
+        audioRef.current.currentTime = 0;
+        audioRef.current.play().catch(err => {
+          console.error(`Error playing ${character} audio in skip:`, err);
+        });
+      }
     }
   };
   
@@ -306,7 +419,7 @@ const SimplePlayer = ({
         {/* Video Player */}
         <video
           ref={videoRef}
-          src={videoUrl}
+          src={currentVideoSrc}
           className="absolute inset-0 w-full h-full object-cover"
           onClick={togglePlayPause}
           playsInline
