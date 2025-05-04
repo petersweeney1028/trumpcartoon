@@ -216,10 +216,42 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(404).json({ message: "Video not found" });
       }
       
-      // Stream the video file with proper content type
-      res.setHeader("Content-Type", "video/mp4");
-      res.setHeader("Cache-Control", "max-age=3600"); // Cache for 1 hour
-      fs.createReadStream(videoPath).pipe(res);
+      try {
+        // Get file stats to log file size
+        const stats = fs.statSync(videoPath);
+        console.log(`Video file exists: ${videoPath}, size: ${stats.size} bytes`);
+        
+        if (stats.size === 0) {
+          console.error(`Empty video file: ${videoPath}`);
+          return res.status(404).json({ message: "Empty video file" });
+        }
+        
+        // Check file format (first few bytes) to ensure it's a valid video
+        const buffer = Buffer.alloc(8);
+        const fd = fs.openSync(videoPath, 'r');
+        fs.readSync(fd, buffer, 0, 8, 0);
+        fs.closeSync(fd);
+        
+        console.log(`Video file header: ${buffer.toString('hex')}`);
+        
+        // Stream the video file with proper content type
+        res.setHeader("Content-Type", "video/mp4");
+        res.setHeader("Cache-Control", "max-age=3600"); // Cache for 1 hour
+        const stream = fs.createReadStream(videoPath);
+        
+        // Handle stream errors
+        stream.on('error', (err) => {
+          console.error(`Stream error: ${err.message}`);
+          if (!res.headersSent) {
+            res.status(500).json({ message: "Error streaming video" });
+          }
+        });
+        
+        stream.pipe(res);
+      } catch (fileError) {
+        console.error(`File processing error: ${fileError.message}`);
+        return res.status(500).json({ message: "Error processing video file" });
+      }
     } catch (error) {
       console.error("Error serving video:", error);
       res.status(500).json({ message: "Failed to serve video" });

@@ -604,8 +604,49 @@ const SimplePlayer = ({
             
             // If combined video fails to load, fall back to individual videos
             if (videoUrl && videoRef.current) {
-              console.log('Falling back to individual video segments due to error');
-              videoRef.current.src = currentVideoSrc;
+              console.log('Falling back to individual video segments due to error with URL:', videoUrl);
+              
+              // Set a flag to indicate we're in fallback mode
+              const useFallback = true;
+              
+              // Update video source to first segment
+              videoRef.current.src = videoPaths.trump1;
+              setCurrentVideoSrc(videoPaths.trump1);
+              setCurrentVideoSegment('trump1');
+              
+              // Make sure video is muted for individual segments
+              videoRef.current.muted = isMuted;
+              
+              // Add event listener to handle video loading
+              const handleFallbackVideoLoaded = () => {
+                if (videoRef.current) {
+                  // Reset time to beginning
+                  videoRef.current.currentTime = 0;
+                  
+                  // Restart appropriate audio for first segment
+                  if (!isMuted && trump1AudioRef.current) {
+                    trump1AudioRef.current.currentTime = 0;
+                    trump1AudioRef.current.play().catch(e => {
+                      console.error('Error playing trump1 audio in fallback:', e);
+                    });
+                  }
+                  
+                  // Remove event listener
+                  videoRef.current.removeEventListener('loadeddata', handleFallbackVideoLoaded);
+                  
+                  // Resume playback if needed
+                  if (isPlaying) {
+                    videoRef.current.play().catch(e => {
+                      console.error('Error playing trump1 video in fallback:', e);
+                    });
+                  }
+                }
+              };
+              
+              // Add event listener
+              videoRef.current.addEventListener('loadeddata', handleFallbackVideoLoaded);
+              
+              // Load the video to trigger the loadeddata event
               videoRef.current.load();
             }
           }}
