@@ -6,13 +6,14 @@ import json
 import time
 
 try:
-    from moviepy.editor import VideoFileClip, AudioFileClip, concatenate_videoclips
+    from moviepy.editor import VideoFileClip, AudioFileClip, concatenate_videoclips, CompositeVideoClip
     MOVIEPY_AVAILABLE = True
 except ImportError:
     print("Warning: moviepy module not found. Video processing will not work.")
     VideoFileClip = None
     AudioFileClip = None
     concatenate_videoclips = None
+    CompositeVideoClip = None
     MOVIEPY_AVAILABLE = False
 
 # Directory paths
@@ -88,24 +89,49 @@ def process_video(remix_id, audio_files):
         output_filename = f"remix_{remix_id}.mp4"
         output_path = os.path.join(VIDEOS_DIR, output_filename)
         
-        # Load video clips with corresponding audio
-        video_clips = []
+        # First, process individual segments with their audio
+        processed_segments = {}
+        segment_durations = {}
+        
         for char in ["trump1", "zelensky", "trump2", "vance"]:
             video_path = VIDEO_SEGMENTS[char]
             audio_path = audio_files[char]
             
             print(f"Processing segment {char} - Video: {video_path}, Audio: {audio_path}")
             
-            # Load the video and set its audio
-            video = VideoFileClip(video_path)
+            # Load the video and audio
+            video = VideoFileClip(video_path).loop()  # Loop the video to ensure it's long enough for the audio
             audio = AudioFileClip(audio_path)
+            
+            # Set the video clip duration to match the audio
+            audio_duration = audio.duration
+            segment_durations[char] = audio_duration
+            
+            # Limit video to the exact audio duration to avoid the black screen
+            video = video.subclip(0, audio_duration)
             
             # Apply the audio to the video
             video = video.set_audio(audio)
-            video_clips.append(video)
+            
+            # Save this processed segment
+            processed_segments[char] = video
+            
+        # Calculate total duration for progress tracking
+        total_duration = sum(segment_durations.values())
+        print(f"Total duration of all segments: {total_duration} seconds")
+            
+        # Create segments with crossfade transitions
+        video_clips = []
+        current_position = 0
         
-        # Concatenate all video segments
-        final_clip = concatenate_videoclips(video_clips)
+        # Add segments in sequence with a small crossfade
+        for char in ["trump1", "zelensky", "trump2", "vance"]:
+            clip = processed_segments[char]
+            video_clips.append(clip)
+            current_position += segment_durations[char]
+        
+        # Concatenate all video segments (method=compose handles transitions better than method=chain)
+        final_clip = concatenate_videoclips(video_clips, method="compose")
         
         # Write the final video to file
         print(f"Writing final video to {output_path}")

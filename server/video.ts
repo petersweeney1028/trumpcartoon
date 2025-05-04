@@ -159,8 +159,7 @@ export async function createVideo(
   try {
     console.log(`Creating video info with ID: ${id}`);
     
-    // Instead of using moviepy, we'll just use the separate clip files
-    // and let the frontend handle the playback sequencing
+    // Prepare clip info for both frontend player and video processor
     const clipInfo = {
       trump1Video: '/clips/trump1.mp4',
       trump1Audio: trumpAudio1,
@@ -172,19 +171,54 @@ export async function createVideo(
       vanceAudio: vanceAudio
     };
     
-    // Since we're not actually using moviepy now, we'll just create a mock video URL
-    // but include the detailed clip information for frontend use
-    const videoUrl = `/videos/remix_${id}.mp4`;
+    // Now use the Python video processor to create a combined video
+    const scriptPath = path.join(process.cwd(), 'server', 'video_processor.py');
+    const audioFiles = {
+      trump1: path.join(STATIC_DIR, trumpAudio1.slice(1)),  // remove leading slash
+      zelensky: path.join(STATIC_DIR, zelenskyAudio.slice(1)),
+      trump2: path.join(STATIC_DIR, trumpAudio2.slice(1)),
+      vance: path.join(STATIC_DIR, vanceAudio.slice(1))
+    };
     
-    console.log('Video processing completed with clip info');
+    const input = {
+      remixId: id,
+      audioFiles: {
+        trump1: trumpAudio1,  // Path relative to STATIC_DIR, with leading slash
+        zelensky: zelenskyAudio,
+        trump2: trumpAudio2,
+        vance: vanceAudio
+      }
+    };
     
-    // Return the paths to both the combined video (which may not work) and the individual clips
+    // Create the combined video with our seamless transitions processor
+    console.log(`Calling video processor with remix ID: ${id}`);
+    const result = await runPythonScript(scriptPath, input);
+    
+    console.log(`Video generated successfully for remix ${id}: ${result.videoUrl}`);
+    
+    // Return both the videoUrl (for the combined video) and clipInfo (for the individual clips)
     return {
-      videoUrl: videoUrl,
+      videoUrl: result.videoUrl,
       clipInfo: clipInfo
     };
   } catch (error) {
     console.error("Error creating video:", error);
-    throw new Error(`Failed to create video: ${error instanceof Error ? error.message : String(error)}`);
+    
+    // If video processing fails, still return the clipInfo so frontend can play segments
+    const clipInfo = {
+      trump1Video: '/clips/trump1.mp4',
+      trump1Audio: trumpAudio1,
+      zelenskyVideo: '/clips/zelensky.mp4',
+      zelenskyAudio: zelenskyAudio,
+      trump2Video: '/clips/trump2.mp4', 
+      trump2Audio: trumpAudio2,
+      vanceVideo: '/clips/vance.mp4',
+      vanceAudio: vanceAudio
+    };
+    
+    return {
+      videoUrl: `/videos/remix_${id}.mp4`, // Placeholder URL
+      clipInfo: clipInfo
+    };
   }
 }

@@ -82,10 +82,11 @@ def generate_tts(character, text, api_key=None, max_retries=2):
             # Create a Fish Audio SDK session
             session = Session(api_key)
             
-            # Create a TTS request with the reference ID
+            # Create a TTS request with the reference ID and increase speaking rate
             tts_request = TTSRequest(
                 reference_id=reference_id,
-                text=text
+                text=text,
+                speaking_rate=1.3  # Increase speaking rate by 30% to make voices faster
             )
             
             # Generate the audio and save to file
