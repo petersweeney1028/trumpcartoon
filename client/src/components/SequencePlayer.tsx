@@ -68,20 +68,43 @@ const SequencePlayer = ({
   
   useEffect(() => {
     // When segment changes, load the new video and audio
-    if (videoRef.current) {
-      videoRef.current.src = currentClipInfo.video;
-      videoRef.current.load();
+    let wasPlaying = isPlaying;
+    
+    // Pause any ongoing playback first
+    if (wasPlaying) {
+      pauseMedia();
+      // Temporarily set to not playing to avoid multiple plays
+      setIsPlaying(false);
     }
     
-    if (audioRef.current) {
-      audioRef.current.src = currentClipInfo.audio;
-      audioRef.current.load();
-    }
+    // Reset progress when switching segments
+    setProgress(0);
     
-    // If we were playing, continue playing the new segment
-    if (isPlaying) {
-      playMedia();
-    }
+    console.log(`Switching to segment: ${currentSegment}`);
+    
+    // Load new sources with a small delay to prevent race conditions
+    setTimeout(() => {
+      if (videoRef.current) {
+        videoRef.current.src = currentClipInfo.video;
+        videoRef.current.load();
+      }
+      
+      if (audioRef.current) {
+        audioRef.current.src = currentClipInfo.audio;
+        audioRef.current.load();
+      }
+      
+      // If we were playing, continue playing the new segment after sources are set
+      if (wasPlaying) {
+        // Add a slight delay to allow media to initialize
+        setTimeout(() => {
+          // Restore playing state
+          setIsPlaying(true);
+          // And trigger playback
+          playMedia();
+        }, 300);
+      }
+    }, 50);
   }, [currentSegment]);
   
   useEffect(() => {
@@ -136,39 +159,81 @@ const SequencePlayer = ({
       console.log('- Video src:', videoRef.current.src);
       console.log('- Audio src:', audioRef.current.src);
       
-      // Play video first
-      if (videoRef.current) {
-        videoRef.current.currentTime = 0; // Always start from the beginning
-        videoRef.current.play().catch(err => {
-          console.error('Video play error:', err);
-        });
-      }
-      
-      // Then try to play audio (after a slight delay)
-      setTimeout(() => {
-        if (audioRef.current) {
-          audioRef.current.play().catch(err => {
-            console.error('Audio play error:', err);
-            
-            // If audio fails to play, try to reload and play again
-            if (audioRef.current) {
-              audioRef.current.load();
-              setTimeout(() => {
-                if (audioRef.current) {
-                  audioRef.current.play().catch(e => {
-                    console.error("Secondary audio play attempt failed:", e);
-                    // Autoplay was prevented
-                    setIsPlaying(false);
-                    if (onPlayPauseToggle) {
-                      onPlayPauseToggle(false);
-                    }
-                  });
-                }
-              }, 300);
-            }
-          });
+      // First, add load event listeners to ensure media is ready
+      const videoLoaded = new Promise<void>((resolve, reject) => {
+        if (!videoRef.current) return reject('Video ref not available');
+        
+        const handleLoaded = () => {
+          videoRef.current?.removeEventListener('loadeddata', handleLoaded);
+          resolve();
+        };
+        
+        // Check if already loaded
+        if (videoRef.current.readyState >= 2) {
+          resolve();
+        } else {
+          videoRef.current.addEventListener('loadeddata', handleLoaded);
+          // Add a timeout to resolve anyway after 2 seconds to prevent hanging
+          setTimeout(resolve, 2000);
         }
-      }, 100);
+      });
+      
+      const audioLoaded = new Promise<void>((resolve, reject) => {
+        if (!audioRef.current) return reject('Audio ref not available');
+        
+        const handleLoaded = () => {
+          audioRef.current?.removeEventListener('loadeddata', handleLoaded);
+          resolve();
+        };
+        
+        // Check if already loaded
+        if (audioRef.current.readyState >= 2) {
+          resolve();
+        } else {
+          audioRef.current.addEventListener('loadeddata', handleLoaded);
+          // Add a timeout to resolve anyway after 2 seconds to prevent hanging
+          setTimeout(resolve, 2000);
+        }
+      });
+      
+      // Wait for both video and audio to load before playing
+      Promise.all([videoLoaded, audioLoaded])
+        .then(() => {
+          console.log('Both video and audio loaded, starting playback');
+          
+          // Reset both to beginning
+          if (videoRef.current) videoRef.current.currentTime = 0;
+          if (audioRef.current) audioRef.current.currentTime = 0;
+          
+          // Play video first (since it's muted, this shouldn't trigger autoplay restrictions)
+          if (videoRef.current) {
+            videoRef.current.play().catch(err => {
+              console.error('Video play error:', err);
+            });
+          }
+          
+          // Then play audio with a small delay to sync better
+          setTimeout(() => {
+            if (audioRef.current) {
+              audioRef.current.play().catch(err => {
+                console.error('Audio play error:', err);
+                // If audio fails to play, try one more time with user interaction
+                setIsPlaying(false);
+                if (onPlayPauseToggle) {
+                  onPlayPauseToggle(false);
+                }
+              });
+            }
+          }, 100);
+        })
+        .catch(error => {
+          console.error('Error loading media:', error);
+          // Auto-play fallback
+          setIsPlaying(false);
+          if (onPlayPauseToggle) {
+            onPlayPauseToggle(false);
+          }
+        });
     } else {
       console.error('Video or audio ref is not available');
     }

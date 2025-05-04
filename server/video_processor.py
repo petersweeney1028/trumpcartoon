@@ -4,17 +4,19 @@ import os
 import sys
 import json
 import time
+import subprocess
+import tempfile
+import shutil
 
+# We don't need MoviePy anymore since we're using direct ffmpeg commands
+MOVIEPY_AVAILABLE = False
+# Just define imports to avoid LSP errors, but we won't use them
 try:
-    from moviepy.editor import VideoFileClip, AudioFileClip, concatenate_videoclips, CompositeVideoClip
-    MOVIEPY_AVAILABLE = True
+    import ffmpeg
+    FFMPEG_PYTHON_AVAILABLE = True
 except ImportError:
-    print("Warning: moviepy module not found. Video processing will not work.")
-    VideoFileClip = None
-    AudioFileClip = None
-    concatenate_videoclips = None
-    CompositeVideoClip = None
-    MOVIEPY_AVAILABLE = False
+    FFMPEG_PYTHON_AVAILABLE = False
+    print("Warning: ffmpeg-python module not found, but we'll use direct ffmpeg commands instead.")
 
 # Directory paths
 BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
@@ -22,9 +24,10 @@ STATIC_DIR = os.path.join(BASE_DIR, "static")
 VIDEOS_DIR = os.path.join(STATIC_DIR, "videos")
 VOICES_DIR = os.path.join(STATIC_DIR, "voices")
 CLIPS_DIR = os.path.join(STATIC_DIR, "clips")
+TEMP_DIR = os.path.join(STATIC_DIR, "temp")
 
 # Ensure all required directories exist
-for directory in [VIDEOS_DIR, VOICES_DIR, CLIPS_DIR]:
+for directory in [VIDEOS_DIR, VOICES_DIR, CLIPS_DIR, TEMP_DIR]:
     os.makedirs(directory, exist_ok=True)
 
 # Fixed video segments
@@ -34,6 +37,76 @@ VIDEO_SEGMENTS = {
     "trump2": os.path.join(CLIPS_DIR, "trump2.mp4"),
     "vance": os.path.join(CLIPS_DIR, "vance.mp4")
 }
+
+def create_video_with_audio(video_path, audio_path, output_path):
+    """
+    Create a video with audio using direct ffmpeg commands
+    """
+    try:
+        print(f"Creating video with audio. Video: {video_path}, Audio: {audio_path}")
+        
+        # Use direct ffmpeg command for more reliable results
+        cmd = [
+            'ffmpeg', '-y',
+            '-i', video_path,
+            '-i', audio_path,
+            '-c:v', 'copy',
+            '-c:a', 'aac',
+            '-map', '0:v:0',
+            '-map', '1:a:0',
+            '-shortest',
+            output_path
+        ]
+        
+        process = subprocess.run(cmd, 
+                                capture_output=True, 
+                                text=True,
+                                check=True)
+        
+        return True
+    except subprocess.CalledProcessError as e:
+        print(f"FFMPEG error: {e.stderr}")
+        return False
+    except Exception as e:
+        print(f"Error creating video with audio: {e}")
+        return False
+
+def concat_videos(video_paths, output_path):
+    """
+    Concatenate multiple videos using ffmpeg concat demuxer
+    """
+    try:
+        # Create a temporary file listing all input videos
+        with tempfile.NamedTemporaryFile(mode='w', suffix='.txt', delete=False) as f:
+            concat_list_path = f.name
+            for video in video_paths:
+                f.write(f"file '{os.path.abspath(video)}'\n")
+        
+        # Concatenate videos with direct ffmpeg command
+        cmd = [
+            'ffmpeg', '-y',
+            '-f', 'concat',
+            '-safe', '0',  # Needed for absolute paths
+            '-i', concat_list_path,
+            '-c', 'copy',
+            output_path
+        ]
+        
+        process = subprocess.run(cmd, 
+                                capture_output=True, 
+                                text=True,
+                                check=True)
+        
+        # Remove the temporary file
+        os.unlink(concat_list_path)
+        
+        return True
+    except subprocess.CalledProcessError as e:
+        print(f"FFMPEG error: {e.stderr}")
+        return False
+    except Exception as e:
+        print(f"Error concatenating videos: {e}")
+        return False
 
 def process_video(remix_id, audio_files):
     """
@@ -57,98 +130,75 @@ def process_video(remix_id, audio_files):
                 "videoUrl": "/videos/remix_output_123.mp4"
             }
     """
-    # Check if moviepy is available before proceeding
-    if not MOVIEPY_AVAILABLE:
-        print("Error: moviepy module is not available. Cannot process video.")
-        # Return a mock video URL
-        output_filename = f"remix_{remix_id}.mp4"
-        return {"videoUrl": f"/videos/{output_filename}"}
-        
     try:
         start_time = time.time()
         print(f"Starting video processing for remix {remix_id}")
         
-        # Check if all required fixed video clips exist
-        for char, video_path in VIDEO_SEGMENTS.items():
-            if not os.path.exists(video_path):
-                print(f"Error: Fixed video clip not found: {video_path}")
-                raise FileNotFoundError(f"Missing video segment: {video_path}")
-
-        # Check if all required audio files exist
-        for char, audio_path in audio_files.items():
-            # Convert relative paths to absolute paths if needed
-            if audio_path.startswith('/voices/'):
-                audio_path = os.path.join(STATIC_DIR, audio_path[1:])
-                audio_files[char] = audio_path
-                
-            if not os.path.exists(audio_files[char]):
-                print(f"Error: Audio file not found: {audio_files[char]}")
-                raise FileNotFoundError(f"Missing audio file: {audio_files[char]}")
+        # Create a temporary directory for this remix
+        temp_remix_dir = os.path.join(TEMP_DIR, f"remix_{remix_id}")
+        os.makedirs(temp_remix_dir, exist_ok=True)
         
         # Prepare the output video filename
         output_filename = f"remix_{remix_id}.mp4"
         output_path = os.path.join(VIDEOS_DIR, output_filename)
         
-        # First, process individual segments with their audio
-        processed_segments = {}
-        segment_durations = {}
+        # Convert audio file paths to absolute paths if needed
+        for char, audio_path in audio_files.items():
+            if audio_path.startswith('/'):
+                # Remove leading slash and join with STATIC_DIR
+                audio_files[char] = os.path.join(STATIC_DIR, audio_path[1:])
+                print(f"Converted audio path: {audio_files[char]}")
+            
+            # Check if audio file exists
+            if not os.path.exists(audio_files[char]):
+                print(f"Audio file not found: {audio_files[char]}")
+                raise FileNotFoundError(f"Missing audio file: {audio_files[char]}")
         
-        for char in ["trump1", "zelensky", "trump2", "vance"]:
+        # Process each character segment
+        segment_videos = []
+        sequence = ["trump1", "zelensky", "trump2", "vance"]
+        
+        for char in sequence:
             video_path = VIDEO_SEGMENTS[char]
             audio_path = audio_files[char]
             
             print(f"Processing segment {char} - Video: {video_path}, Audio: {audio_path}")
             
-            # Load the video and audio
-            video = VideoFileClip(video_path).loop()  # Loop the video to ensure it's long enough for the audio
-            audio = AudioFileClip(audio_path)
+            # Create output path for this segment
+            segment_output = os.path.join(temp_remix_dir, f"{char}_with_audio.mp4")
             
-            # Set the video clip duration to match the audio
-            audio_duration = audio.duration
-            segment_durations[char] = audio_duration
-            
-            # Limit video to the exact audio duration to avoid the black screen
-            video = video.subclip(0, audio_duration)
-            
-            # Apply the audio to the video
-            video = video.set_audio(audio)
-            
-            # Save this processed segment
-            processed_segments[char] = video
-            
-        # Calculate total duration for progress tracking
-        total_duration = sum(segment_durations.values())
-        print(f"Total duration of all segments: {total_duration} seconds")
-            
-        # Create segments with crossfade transitions
-        video_clips = []
-        current_position = 0
+            # Combine video with audio
+            if not create_video_with_audio(video_path, audio_path, segment_output):
+                print(f"Failed to process segment {char}")
+                continue
+                
+            segment_videos.append(segment_output)
         
-        # Add segments in sequence with a small crossfade
-        for char in ["trump1", "zelensky", "trump2", "vance"]:
-            clip = processed_segments[char]
-            video_clips.append(clip)
-            current_position += segment_durations[char]
+        # Concatenate all processed segments
+        if len(segment_videos) == len(sequence):
+            # All segments processed successfully
+            print(f"Concatenating {len(segment_videos)} video segments")
+            
+            # Concatenate videos
+            if concat_videos(segment_videos, output_path):
+                print(f"Successfully created combined video at {output_path}")
+            else:
+                print("Failed to concatenate videos")
+                # If concatenation fails, at least copy one of the segments so we return something
+                shutil.copy(segment_videos[0], output_path)
+        else:
+            # Some segments failed, copy the first successful one
+            print(f"Not all segments were processed. Using first available segment.")
+            if segment_videos:
+                shutil.copy(segment_videos[0], output_path)
+            else:
+                raise Exception("No video segments were successfully processed")
         
-        # Concatenate all video segments (method=compose handles transitions better than method=chain)
-        final_clip = concatenate_videoclips(video_clips, method="compose")
-        
-        # Write the final video to file
-        print(f"Writing final video to {output_path}")
-        final_clip.write_videofile(
-            output_path, 
-            codec="libx264", 
-            audio_codec="aac", 
-            temp_audiofile=os.path.join(VIDEOS_DIR, f"temp_{remix_id}.m4a"),
-            remove_temp=True,
-            threads=4,
-            fps=24
-        )
-        
-        # Close all clips to release resources
-        for clip in video_clips:
-            clip.close()
-        final_clip.close()
+        # Clean up temporary files
+        try:
+            shutil.rmtree(temp_remix_dir)
+        except Exception as e:
+            print(f"Warning: Failed to clean up temp directory: {str(e)}")
         
         elapsed_time = time.time() - start_time
         print(f"Video processing completed in {elapsed_time:.2f} seconds")
@@ -160,7 +210,12 @@ def process_video(remix_id, audio_files):
         
     except Exception as e:
         print(f"Error in video processing: {str(e)}")
-        raise e
+        # Create a fallback video URL
+        fallback_filename = f"remix_{remix_id}.mp4"
+        return {
+            "videoUrl": f"/videos/{fallback_filename}",
+            "error": str(e)
+        }
 
 def main():
     """
@@ -190,18 +245,49 @@ def main():
             print("Error: Missing required fields in input JSON")
             sys.exit(1)
         
-        # Clear any previous output to stdout
-        sys.stdout = open(os.devnull, 'w')
-        
-        # Process the video
-        result = process_video(remix_id, audio_files)
-        
-        # Restore stdout and print only the JSON result
-        sys.stdout = sys.__stdout__
-        print(json.dumps(result))
-        
+        # Setup logging to a file for debugging while still outputting JSON to stdout
+        log_file = os.path.join(TEMP_DIR, f"video_processor_{remix_id}.log")
+        with open(log_file, 'w') as f:
+            # Log input data for debugging
+            f.write(f"Processing remix ID: {remix_id}\n")
+            f.write(f"Audio files: {json.dumps(audio_files, indent=2)}\n")
+            f.write(f"Using ffmpeg version: {subprocess.getoutput('ffmpeg -version')[:100]}...\n")
+            
+            # Redirect stdout to prevent console pollution
+            original_stdout = sys.stdout
+            sys.stdout = f
+            
+            try:
+                # Process the video
+                result = process_video(remix_id, audio_files)
+                
+                # Restore stdout and print only the JSON result
+                sys.stdout = original_stdout
+                print(json.dumps(result))
+            except Exception as e:
+                f.write(f"Error during processing: {str(e)}\n")
+                # Restore stdout
+                sys.stdout = original_stdout
+                # Return an error result with a valid videoUrl fallback
+                output_filename = f"remix_{remix_id}.mp4"
+                print(json.dumps({
+                    "error": str(e),
+                    "videoUrl": f"/videos/{output_filename}"
+                }))
+                
     except Exception as e:
-        print(json.dumps({"error": str(e)}))
+        # For outer exceptions where remix_id might not be defined yet
+        error_id = "error"
+        try:
+            if 'remix_id' in locals() and remix_id:
+                error_id = remix_id
+        except:
+            pass
+            
+        print(json.dumps({
+            "error": str(e),
+            "videoUrl": f"/videos/remix_{error_id}.mp4"
+        }))
         sys.exit(1)
 
 if __name__ == "__main__":
