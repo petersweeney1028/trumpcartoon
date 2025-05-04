@@ -158,20 +158,36 @@ const SimplePlayer = ({
           if (videoRef.current) {
             const wasPlaying = !videoRef.current.paused;
             
+            // Pause current video first to avoid conflicts
+            videoRef.current.pause();
+            
             // Update the video src state which will trigger the video element to change 
             setCurrentVideoSrc(videoPaths[character as keyof typeof videoPaths]);
-            
-            // Reset time to the beginning of the segment
-            videoRef.current.currentTime = 0;
             
             // Set this before attempting to play to avoid blocking
             setCurrentVideoSegment(character);
             
-            // If we were playing, resume playback in the new segment
+            // If we were playing, resume playback in the new segment after a small delay
+            // This delay is crucial to allow the browser to load the new video before playing
             if (wasPlaying) {
-              videoRef.current.play().catch(e => {
-                console.error(`Error playing ${character} video:`, e);
-              });
+              // Add event listener for loadeddata to ensure video is ready to play
+              const handleVideoLoaded = () => {
+                if (videoRef.current) {
+                  // Reset time to the beginning
+                  videoRef.current.currentTime = 0;
+                  
+                  // Play the video
+                  videoRef.current.play().catch(e => {
+                    console.error(`Error playing ${character} video after load:`, e);
+                  });
+                  
+                  // Remove event listener
+                  videoRef.current.removeEventListener('loadeddata', handleVideoLoaded);
+                }
+              };
+              
+              // Add event listener
+              videoRef.current.addEventListener('loadeddata', handleVideoLoaded);
             }
           }
         }
@@ -301,11 +317,36 @@ const SimplePlayer = ({
     
     // If we clicked into a different character segment, update the video
     if (character !== currentVideoSegment) {
+      // Pause current video first
+      if (videoRef.current) {
+        videoRef.current.pause();
+      }
+      
+      // Set new video source
       setCurrentVideoSrc(videoPaths[character as keyof typeof videoPaths]);
       setCurrentVideoSegment(character);
       
-      // Reset video to beginning of this segment
-      if (videoRef.current) {
+      // Use event listener to ensure video is loaded before playing
+      if (videoRef.current && isPlaying) {
+        const handleVideoLoaded = () => {
+          if (videoRef.current) {
+            // Reset time to beginning
+            videoRef.current.currentTime = 0;
+            
+            // Play the video
+            videoRef.current.play().catch(err => {
+              console.error(`Error playing ${character} video after progress click:`, err);
+            });
+            
+            // Remove event listener
+            videoRef.current.removeEventListener('loadeddata', handleVideoLoaded);
+          }
+        };
+        
+        // Add event listener
+        videoRef.current.addEventListener('loadeddata', handleVideoLoaded);
+      } else if (videoRef.current) {
+        // Not playing, just reset position
         videoRef.current.currentTime = 0;
       }
     } else {
@@ -315,6 +356,13 @@ const SimplePlayer = ({
         const segmentStart = sequence[index].start;
         const relativePosition = newTime - segmentStart;
         videoRef.current.currentTime = relativePosition;
+        
+        // If playing, ensure it continues
+        if (isPlaying) {
+          videoRef.current.play().catch(err => {
+            console.error('Error resuming video after progress click:', err);
+          });
+        }
       }
     }
     
@@ -364,20 +412,47 @@ const SimplePlayer = ({
     
     // Update the video source if needed
     if (character !== currentVideoSegment) {
+      // Pause current video first
+      if (videoRef.current) {
+        videoRef.current.pause();
+      }
+      
+      // Set the new video source
       setCurrentVideoSrc(videoPaths[character as keyof typeof videoPaths]);
       setCurrentVideoSegment(character);
-    }
-    
-    // Reset video position
-    if (videoRef.current) {
-      videoRef.current.currentTime = 0;
-    }
-    
-    // If we're playing, make sure we're still playing
-    if (isPlaying && videoRef.current) {
-      videoRef.current.play().catch(err => {
-        console.error('Error playing video after skip:', err);
-      });
+      
+      // Use event listener to ensure video is loaded before playing
+      if (videoRef.current && isPlaying) {
+        const handleVideoLoaded = () => {
+          if (videoRef.current) {
+            // Reset time to beginning
+            videoRef.current.currentTime = 0;
+            
+            // Play the video
+            videoRef.current.play().catch(err => {
+              console.error(`Error playing ${character} video after skip:`, err);
+            });
+            
+            // Remove event listener
+            videoRef.current.removeEventListener('loadeddata', handleVideoLoaded);
+          }
+        };
+        
+        // Add event listener
+        videoRef.current.addEventListener('loadeddata', handleVideoLoaded);
+      }
+    } else {
+      // Same video, just reset position
+      if (videoRef.current) {
+        videoRef.current.currentTime = 0;
+        
+        // If we're playing, continue playing
+        if (isPlaying) {
+          videoRef.current.play().catch(err => {
+            console.error('Error playing video after skip:', err);
+          });
+        }
+      }
     }
     
     // Also play appropriate audio
