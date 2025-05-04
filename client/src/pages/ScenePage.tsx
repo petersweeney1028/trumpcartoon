@@ -90,6 +90,7 @@ const ScenePage = () => {
                   clipInfo={remix.clipInfo}
                   script={remix.script}
                   onPlayPauseToggle={handlePlayPauseToggle}
+                  videoUrl={remix.videoUrl} // Pass the combined video URL when available
                 />
                 
                 <div className="hidden">

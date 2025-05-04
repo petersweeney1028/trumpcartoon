@@ -11,13 +11,15 @@ interface SimplePlayerProps {
   };
   onPlayPauseToggle?: (isPlaying: boolean) => void;
   autoPlay?: boolean;
+  videoUrl?: string; // Optional URL to a combined video file
 }
 
 const SimplePlayer = ({
   clipInfo,
   script,
   onPlayPauseToggle,
-  autoPlay = false
+  autoPlay = false,
+  videoUrl
 }: SimplePlayerProps) => {
   const [isPlaying, setIsPlaying] = useState(autoPlay);
   const [currentTime, setCurrentTime] = useState(0);
@@ -135,121 +137,161 @@ const SimplePlayer = ({
     // Make sure duration is set correctly
     setDuration(totalDuration);
     
-    const handleTimeUpdate = () => {
-      // Use our custom time tracking
-      setCurrentTime(prev => {
-        const newTime = prev + 0.1; // Increment by a small amount each update
+    // If we're using the combined video, handle time updates differently
+    if (videoUrl) {
+      // For combined video, we can use the native timeupdate event
+      const handleNativeTimeUpdate = () => {
+        if (!videoRef.current) return;
         
-        // Reset when we reach total duration
-        if (newTime >= totalDuration) {
+        // Use the video's actual current time
+        const newTime = videoRef.current.currentTime;
+        setCurrentTime(newTime);
+        
+        // Calculate progress based on video's actual duration
+        const videoDuration = videoRef.current.duration || totalDuration;
+        setProgress((newTime / videoDuration) * 100);
+        
+        // Update caption based on current time
+        for (let i = sequence.length - 1; i >= 0; i--) {
+          if (newTime >= sequence[i].start) {
+            setCurrentCaption(sequence[i].caption);
+            break;
+          }
+        }
+        
+        // End playback if we've reached the end
+        if (newTime >= videoDuration - 0.1) {
           setIsPlaying(false);
           if (onPlayPauseToggle) onPlayPauseToggle(false);
-          return 0;
+          if (videoRef.current) videoRef.current.currentTime = 0;
         }
-        
-        // Get current segment
-        const { character } = getCurrentSegment(newTime);
-        
-        // If we've moved to a new segment, switch the video source
-        if (character !== currentVideoSegment) {
-          console.log(`Switching from ${currentVideoSegment} to ${character}`);
+      };
+      
+      // Use the native timeupdate event
+      video.addEventListener('timeupdate', handleNativeTimeUpdate);
+      
+      // Clean up
+      return () => {
+        video.removeEventListener('timeupdate', handleNativeTimeUpdate);
+      };
+    } else {
+      // Original logic for segment-based playback
+      const handleTimeUpdate = () => {
+        // Use our custom time tracking
+        setCurrentTime(prev => {
+          const newTime = prev + 0.1; // Increment by a small amount each update
           
-          // Update video source if we changed segments
-          if (videoRef.current) {
-            const wasPlaying = !videoRef.current.paused;
-            
-            // Pause current video first to avoid conflicts
-            videoRef.current.pause();
-            
-            // Update the video src state which will trigger the video element to change 
-            setCurrentVideoSrc(videoPaths[character as keyof typeof videoPaths]);
-            
-            // Set this before attempting to play to avoid blocking
-            setCurrentVideoSegment(character);
-            
-            // If we were playing, resume playback in the new segment after a small delay
-            // This delay is crucial to allow the browser to load the new video before playing
-            if (wasPlaying) {
-              // Add event listener for loadeddata to ensure video is ready to play
-              const handleVideoLoaded = () => {
-                if (videoRef.current) {
-                  // Reset time to the beginning
-                  videoRef.current.currentTime = 0;
-                  
-                  // Play the video
-                  videoRef.current.play().catch(e => {
-                    console.error(`Error playing ${character} video after load:`, e);
-                  });
-                  
-                  // Remove event listener
-                  videoRef.current.removeEventListener('loadeddata', handleVideoLoaded);
-                }
-              };
-              
-              // Add event listener
-              videoRef.current.addEventListener('loadeddata', handleVideoLoaded);
-            }
+          // Reset when we reach total duration
+          if (newTime >= totalDuration) {
+            setIsPlaying(false);
+            if (onPlayPauseToggle) onPlayPauseToggle(false);
+            return 0;
           }
-        }
-        
-        // Potentially start playing appropriate audio
-        if (Math.floor(prev) !== Math.floor(newTime)) {
-          // At each whole second boundary, check if we need to switch audio
-          const audioRefs = {
-            trump1: trump1AudioRef,
-            zelensky: zelenskyAudioRef,
-            trump2: trump2AudioRef,
-            vance: vanceAudioRef
-          };
           
           // Get current segment
-          const currentSegRef = audioRefs[character as keyof typeof audioRefs];
+          const { character } = getCurrentSegment(newTime);
           
-          // Try to play this segment's audio
-          if (currentSegRef?.current && !isMuted) {
-            Object.values(audioRefs).forEach(ref => {
-              if (ref && ref !== currentSegRef && ref.current) {
-                ref.current.pause();
-              }
-            });
+          // If we've moved to a new segment, switch the video source
+          if (character !== currentVideoSegment) {
+            console.log(`Switching from ${currentVideoSegment} to ${character}`);
             
-            if (currentSegRef.current.paused) {
-              currentSegRef.current.currentTime = 0;
-              currentSegRef.current.play().catch(e => {
-                console.error(`Error playing ${character} audio:`, e);
-              });
+            // Update video source if we changed segments
+            if (videoRef.current) {
+              const wasPlaying = !videoRef.current.paused;
+              
+              // Pause current video first to avoid conflicts
+              videoRef.current.pause();
+              
+              // Update the video src state which will trigger the video element to change 
+              setCurrentVideoSrc(videoPaths[character as keyof typeof videoPaths]);
+              
+              // Set this before attempting to play to avoid blocking
+              setCurrentVideoSegment(character);
+              
+              // If we were playing, resume playback in the new segment after a small delay
+              // This delay is crucial to allow the browser to load the new video before playing
+              if (wasPlaying) {
+                // Add event listener for loadeddata to ensure video is ready to play
+                const handleVideoLoaded = () => {
+                  if (videoRef.current) {
+                    // Reset time to the beginning
+                    videoRef.current.currentTime = 0;
+                    
+                    // Play the video
+                    videoRef.current.play().catch(e => {
+                      console.error(`Error playing ${character} video after load:`, e);
+                    });
+                    
+                    // Remove event listener
+                    videoRef.current.removeEventListener('loadeddata', handleVideoLoaded);
+                  }
+                };
+                
+                // Add event listener
+                videoRef.current.addEventListener('loadeddata', handleVideoLoaded);
+              }
             }
           }
-        }
+          
+          // Potentially start playing appropriate audio
+          if (Math.floor(prev) !== Math.floor(newTime)) {
+            // At each whole second boundary, check if we need to switch audio
+            const audioRefs = {
+              trump1: trump1AudioRef,
+              zelensky: zelenskyAudioRef,
+              trump2: trump2AudioRef,
+              vance: vanceAudioRef
+            };
+            
+            // Get current segment
+            const currentSegRef = audioRefs[character as keyof typeof audioRefs];
+            
+            // Try to play this segment's audio
+            if (currentSegRef?.current && !isMuted) {
+              Object.values(audioRefs).forEach(ref => {
+                if (ref && ref !== currentSegRef && ref.current) {
+                  ref.current.pause();
+                }
+              });
+              
+              if (currentSegRef.current.paused) {
+                currentSegRef.current.currentTime = 0;
+                currentSegRef.current.play().catch(e => {
+                  console.error(`Error playing ${character} audio:`, e);
+                });
+              }
+            }
+          }
+          
+          return newTime;
+        });
         
-        return newTime;
-      });
+        // Calculate progress based on our total duration
+        setProgress((currentTime / totalDuration) * 100);
+      };
       
-      // Calculate progress based on our total duration
-      setProgress((currentTime / totalDuration) * 100);
-    };
-    
-    // Simulate timeupdate with our own interval for more precise control
-    let intervalId: number;
-    if (isPlaying) {
-      intervalId = window.setInterval(handleTimeUpdate, 100);
-    }
-    
-    const handleEnded = () => {
-      // Don't end playback when video ends, we'll handle that ourselves
-      if (video.currentTime >= video.duration - 0.1) {
-        video.currentTime = 0;
-        video.play().catch(err => console.error('Error looping video:', err));
+      // Simulate timeupdate with our own interval for more precise control
+      let intervalId: number;
+      if (isPlaying) {
+        intervalId = window.setInterval(handleTimeUpdate, 100);
       }
-    };
-    
-    video.addEventListener('ended', handleEnded);
-    
-    return () => {
-      if (intervalId) clearInterval(intervalId);
-      video.removeEventListener('ended', handleEnded);
-    };
-  }, [isPlaying, currentTime, totalDuration, isMuted, onPlayPauseToggle, currentVideoSegment, videoPaths]);
+      
+      const handleEnded = () => {
+        // Don't end playback when video ends, we'll handle that ourselves
+        if (video.currentTime >= video.duration - 0.1) {
+          video.currentTime = 0;
+          video.play().catch(err => console.error('Error looping video:', err));
+        }
+      };
+      
+      video.addEventListener('ended', handleEnded);
+      
+      return () => {
+        if (intervalId) clearInterval(intervalId);
+        video.removeEventListener('ended', handleEnded);
+      };
+    }
+  }, [isPlaying, currentTime, totalDuration, isMuted, onPlayPauseToggle, currentVideoSegment, videoPaths, videoUrl]);
   
   const togglePlayPause = () => {
     setIsPlaying(!isPlaying);
@@ -260,6 +302,15 @@ const SimplePlayer = ({
     const newMutedState = !isMuted;
     setIsMuted(newMutedState);
     
+    // If we're using a combined video, only mute/unmute the video element
+    if (videoUrl) {
+      if (videoRef.current) {
+        videoRef.current.muted = newMutedState;
+      }
+      return;
+    }
+    
+    // For segment-based playback, mute/unmute video and audio elements
     // Mute/unmute video
     if (videoRef.current) {
       videoRef.current.muted = newMutedState;
@@ -306,6 +357,36 @@ const SimplePlayer = ({
     const rect = progressBar.getBoundingClientRect();
     const clickPosition = (e.clientX - rect.left) / rect.width;
     
+    if (videoUrl) {
+      // If we're using the combined video, it's much simpler
+      const videoDuration = videoRef.current.duration || totalDuration;
+      const newTime = clickPosition * videoDuration;
+      
+      // Set the video time directly
+      videoRef.current.currentTime = newTime;
+      
+      // Update our state to match
+      setCurrentTime(newTime);
+      
+      // Update caption based on time (this will happen in the timeupdate handler too)
+      for (let i = sequence.length - 1; i >= 0; i--) {
+        if (newTime >= sequence[i].start) {
+          setCurrentCaption(sequence[i].caption);
+          break;
+        }
+      }
+      
+      // If playing, ensure it continues
+      if (isPlaying) {
+        videoRef.current.play().catch(err => {
+          console.error('Error resuming combined video after progress click:', err);
+        });
+      }
+      
+      return;
+    }
+    
+    // Original segment-based logic for individual videos
     // Use our total duration, not video duration
     const newTime = clickPosition * totalDuration;
     
@@ -410,6 +491,23 @@ const SimplePlayer = ({
     setCurrentTime(newTime); 
     setCurrentCaption(segment.caption);
     
+    if (videoUrl) {
+      // For combined video, we just need to seek to the right time
+      if (videoRef.current) {
+        // Set the video time directly to the segment start
+        videoRef.current.currentTime = newTime;
+        
+        // If playing, ensure it continues
+        if (isPlaying) {
+          videoRef.current.play().catch(err => {
+            console.error('Error playing combined video after skip:', err);
+          });
+        }
+      }
+      return;
+    }
+    
+    // Original segment-based logic for individual videos
     // Update the video source if needed
     if (character !== currentVideoSegment) {
       // Pause current video first
@@ -494,14 +592,23 @@ const SimplePlayer = ({
         {/* Video Player */}
         <video
           ref={videoRef}
-          src={currentVideoSrc}
+          src={videoUrl ? videoUrl : currentVideoSrc}
           className="absolute inset-0 w-full h-full object-cover"
           onClick={togglePlayPause}
           playsInline
           crossOrigin="anonymous"
-          muted={isMuted}
+          muted={videoUrl ? false : isMuted} // Only mute if we're using individual videos
           preload="auto"
-          onError={(e) => console.error('Video load error:', e)}
+          onError={(e) => {
+            console.error('Video load error:', e);
+            
+            // If combined video fails to load, fall back to individual videos
+            if (videoUrl && videoRef.current) {
+              console.log('Falling back to individual video segments due to error');
+              videoRef.current.src = currentVideoSrc;
+              videoRef.current.load();
+            }
+          }}
         />
         
         {/* Play button overlay (visible when paused) */}
