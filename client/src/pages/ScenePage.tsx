@@ -5,6 +5,7 @@ import VideoPlayer from "@/components/VideoPlayer";
 import SequencePlayer from "@/components/SequencePlayer";
 import ContinuousPlayer from "@/components/ContinuousPlayer";
 import SimplePlayer from "@/components/SimplePlayer";
+import SequenceVideoPlayer from "@/components/SequenceVideoPlayer";
 import DebugPlayer from "@/components/DebugPlayer";
 import SharePanel from "@/components/SharePanel";
 import RemixDetails from "@/components/RemixDetails";
@@ -84,19 +85,30 @@ const ScenePage = () => {
             {remix.clipInfo ? (
               <>
                 <div className="bg-yellow-100 p-2 mb-2 text-sm rounded-md">
-                  Using SimplePlayer (muted video with segment timestamps)
+                  Using SequenceVideoPlayer (synchronized video segments with audio)
                 </div>
-                <SimplePlayer
+                <SequenceVideoPlayer
                   clipInfo={remix.clipInfo}
                   script={remix.script}
                   onPlayPauseToggle={handlePlayPauseToggle}
-                  videoUrl={remix.videoUrl} // Pass the combined video URL when available
                 />
                 
-                <div className="hidden">
-                  {/* Hidden fallback players for debugging */}
+                <div className="mt-4">
+                  {/* Fallback players for debugging */}
+                  <details className="mb-2 p-2 bg-gray-100 rounded-md">
+                    <summary className="font-semibold cursor-pointer">Show original SimplePlayer</summary>
+                    <div className="mt-2">
+                      <SimplePlayer
+                        clipInfo={remix.clipInfo}
+                        script={remix.script}
+                        onPlayPauseToggle={() => {}}
+                        videoUrl={remix.videoUrl}
+                      />
+                    </div>
+                  </details>
+                
                   <details className="mt-2 p-2 bg-gray-100 rounded-md">
-                    <summary className="font-semibold cursor-pointer">Show ContinuousPlayer (Advanced)</summary>
+                    <summary className="font-semibold cursor-pointer">Show ContinuousPlayer</summary>
                     <div className="mt-2">
                       <ContinuousPlayer
                         clipInfo={remix.clipInfo}
@@ -107,7 +119,7 @@ const ScenePage = () => {
                   </details>
                 
                   <details className="mt-2 p-2 bg-gray-100 rounded-md">
-                    <summary className="font-semibold cursor-pointer">Show SequencePlayer (Sequential)</summary>
+                    <summary className="font-semibold cursor-pointer">Show SequencePlayer</summary>
                     <div className="mt-2">
                       <SequencePlayer
                         clipInfo={remix.clipInfo}
