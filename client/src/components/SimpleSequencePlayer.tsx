@@ -148,6 +148,9 @@ const SimpleSequencePlayer: React.FC<SimpleSequencePlayerProps> = ({
     const allLoaded = Object.values(mediaState.loaded).every(loaded => loaded);
     if (!allLoaded) return;
     
+    // Prevent recalculating boundaries if they're already set
+    if (totalDuration > 0) return;
+    
     console.log("All media loaded. Calculating boundaries...");
     
     // Calculate segment boundaries and total duration
@@ -163,6 +166,7 @@ const SimpleSequencePlayer: React.FC<SimpleSequencePlayerProps> = ({
       totalTime += duration;
     });
     
+    // Update media state only once
     setMediaState(prev => ({
       ...prev,
       boundaries: newBoundaries
@@ -174,13 +178,8 @@ const SimpleSequencePlayer: React.FC<SimpleSequencePlayerProps> = ({
     console.log("Segment boundaries:", newBoundaries);
     console.log("Total duration:", totalTime);
     
-    // Auto-play if enabled
-    if (autoPlay) {
-      setTimeout(() => {
-        playSegment('trump1');
-      }, 100);
-    }
-  }, [mediaState.loaded, mediaState.durations, sequence, autoPlay]);
+    // Auto-play if enabled (we'll handle this in a separate effect)
+  }, [mediaState.loaded, mediaState.durations, sequence, totalDuration]);
   
   // Update progress based on current time
   useEffect(() => {
@@ -211,24 +210,35 @@ const SimpleSequencePlayer: React.FC<SimpleSequencePlayerProps> = ({
       }
     };
     
+    // Store event handler functions to properly remove them later
+    const eventHandlers: {[key in CharacterSegment]?: () => void} = {};
+    
     // Attach ended event listeners to all audio elements
     sequence.forEach(segment => {
       const audio = audioRefs[segment].current;
       if (audio) {
-        audio.addEventListener('ended', () => handleAudioEnded(segment));
+        // Create a named handler for this segment that we can remove later
+        const handler = () => handleAudioEnded(segment);
+        eventHandlers[segment] = handler;
+        
+        // Remove any existing listeners first to prevent duplicates
+        audio.removeEventListener('ended', eventHandlers[segment]!);
+        
+        // Add the new listener
+        audio.addEventListener('ended', handler);
       }
     });
     
-    // Clean up event listeners on unmount
+    // Clean up event listeners on unmount or when dependencies change
     return () => {
       sequence.forEach(segment => {
         const audio = audioRefs[segment].current;
-        if (audio) {
-          audio.removeEventListener('ended', () => handleAudioEnded(segment));
+        if (audio && eventHandlers[segment]) {
+          audio.removeEventListener('ended', eventHandlers[segment]!);
         }
       });
     };
-  }, [sequence, onPlayPauseToggle]);
+  }, [sequence, onPlayPauseToggle, getNextSegment, playSegment]);
   
   // Update current time during playback
   useEffect(() => {
@@ -472,6 +482,20 @@ const SimpleSequencePlayer: React.FC<SimpleSequencePlayerProps> = ({
     }
   }, [isPlaying]);
   
+  // Handle autoplay (only once boundaries are calculated)
+  useEffect(() => {
+    // Only proceed if autoPlay is true AND loading is complete
+    if (autoPlay && !loading && totalDuration > 0) {
+      console.log("Triggering autoplay with delay");
+      // Small delay to ensure everything is ready
+      const timer = setTimeout(() => {
+        playSegment('trump1');
+      }, 300);
+      
+      return () => clearTimeout(timer);
+    }
+  }, [autoPlay, loading, totalDuration, playSegment]);
+  
   // Cleanup on unmount
   useEffect(() => {
     return () => {
@@ -676,7 +700,8 @@ const SimpleSequencePlayer: React.FC<SimpleSequencePlayerProps> = ({
             key={`audio-${segment}`}
             ref={audioRefs[segment]}
             src={audioPaths[segment]}
-            preload="auto"
+            preload="metadata" 
+            autoPlay={false}
             muted={isMuted}
             style={{ display: 'none' }}
             onLoadedData={() => handleAudioLoaded(segment)}
