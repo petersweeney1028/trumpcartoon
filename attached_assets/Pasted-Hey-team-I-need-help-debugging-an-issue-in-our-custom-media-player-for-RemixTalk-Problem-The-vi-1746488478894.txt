@@ -1,0 +1,50 @@
+Hey team — I need help debugging an issue in our custom media player for RemixTalk.
+
+❗Problem
+The video and audio segments aren’t syncing properly across segments. Sometimes:
+
+The audio plays while the wrong video is visible
+
+Segments aren’t transitioning cleanly
+
+Videos are looping or overlapping incorrectly
+
+This seems to stem from how the playSegment function triggers playback per segment and how transitions are handled using timers and boundary tracking.
+
+✅ What’s Working
+We are correctly loading 4 video segments (trump1, zelensky, trump2, vance)
+
+We are correctly loading 4 corresponding audio tracks
+
+Each video/audio pair has its own element, stacked and toggled by opacity
+
+⚠️ Suspected Issues
+Videos are looping via .loop = true, but we don’t actually want them to loop — they should stop when audio ends, and the next segment should begin.
+
+Timing drift between audio playback time and Date.now()-based transitions — small desyncs accumulate.
+
+Timer restarts on segment transitions might be creating frame drops or async race conditions.
+
+Video visibility is managed by setting opacity, not display or pause() — previous videos might still be playing silently underneath.
+
+💡 Suggested Fixes
+Set .loop = false on all videos — these are fixed-duration clips, we want them to play once per audio segment.
+
+In playSegment, call .pause() and reset .currentTime = 0 on all video and audio elements before starting the current one — this prevents overlapping media state.
+
+Track segment end using audio.ended or .duration, not only wall clock time — this gives tighter sync and simpler transitions.
+
+Ensure only one video/audio element is actively playing at any time.
+
+✅ Goal
+Clean transitions across the 4 segments:
+
+Video and audio start at the same time
+
+Both play once for their duration
+
+When a segment ends, the next segment starts immediately
+
+Final segment ends cleanly (no auto-loop or stuck playback)
+
+Let me know if you want me to simplify the logic into a single controller loop instead of per-segment play logic.

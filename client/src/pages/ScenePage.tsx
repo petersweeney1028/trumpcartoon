@@ -7,6 +7,7 @@ import ContinuousPlayer from "@/components/ContinuousPlayer";
 import SimplePlayer from "@/components/SimplePlayer";
 import SequenceVideoPlayer from "@/components/SequenceVideoPlayer";
 import DirectSequencePlayer from "@/components/DirectSequencePlayer";
+import SimpleSequencePlayer from "@/components/SimpleSequencePlayer";
 import DebugPlayer from "@/components/DebugPlayer";
 import SharePanel from "@/components/SharePanel";
 import RemixDetails from "@/components/RemixDetails";
@@ -86,9 +87,9 @@ const ScenePage = () => {
             {remix.clipInfo ? (
               <>
                 <div className="bg-yellow-100 p-2 mb-2 text-sm rounded-md">
-                  Using DirectSequencePlayer (synchronized with real-time segment transitions)
+                  Using SimpleSequencePlayer (fixed syncing with audio-driven transitions)
                 </div>
-                <DirectSequencePlayer
+                <SimpleSequencePlayer
                   clipInfo={remix.clipInfo}
                   script={remix.script}
                   onPlayPauseToggle={handlePlayPauseToggle}
@@ -134,6 +135,17 @@ const ScenePage = () => {
                     <summary className="font-semibold cursor-pointer">Show SequenceVideoPlayer</summary>
                     <div className="mt-2">
                       <SequenceVideoPlayer
+                        clipInfo={remix.clipInfo}
+                        script={remix.script}
+                        onPlayPauseToggle={() => {}}
+                      />
+                    </div>
+                  </details>
+                  
+                  <details className="mt-2 p-2 bg-gray-100 rounded-md">
+                    <summary className="font-semibold cursor-pointer">Show DirectSequencePlayer</summary>
+                    <div className="mt-2">
+                      <DirectSequencePlayer
                         clipInfo={remix.clipInfo}
                         script={remix.script}
                         onPlayPauseToggle={() => {}}
