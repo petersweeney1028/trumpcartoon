@@ -8,6 +8,7 @@ import SimplePlayer from "@/components/SimplePlayer";
 import SequenceVideoPlayer from "@/components/SequenceVideoPlayer";
 import DirectSequencePlayer from "@/components/DirectSequencePlayer";
 import SimpleSequencePlayer from "@/components/SimpleSequencePlayer";
+import FixedSequencePlayer from "@/components/FixedSequencePlayer";
 import DebugPlayer from "@/components/DebugPlayer";
 import SharePanel from "@/components/SharePanel";
 import RemixDetails from "@/components/RemixDetails";
@@ -86,10 +87,10 @@ const ScenePage = () => {
           <div className="lg:w-7/12">
             {remix.clipInfo ? (
               <>
-                <div className="bg-yellow-100 p-2 mb-2 text-sm rounded-md">
-                  Using SimpleSequencePlayer (fixed syncing with audio-driven transitions)
+                <div className="bg-green-100 p-2 mb-2 text-sm rounded-md">
+                  Using FixedSequencePlayer (new implementation with proper audio/video sync)
                 </div>
-                <SimpleSequencePlayer
+                <FixedSequencePlayer
                   clipInfo={remix.clipInfo}
                   script={remix.script}
                   onPlayPauseToggle={handlePlayPauseToggle}
@@ -146,6 +147,17 @@ const ScenePage = () => {
                     <summary className="font-semibold cursor-pointer">Show DirectSequencePlayer</summary>
                     <div className="mt-2">
                       <DirectSequencePlayer
+                        clipInfo={remix.clipInfo}
+                        script={remix.script}
+                        onPlayPauseToggle={() => {}}
+                      />
+                    </div>
+                  </details>
+                  
+                  <details className="mt-2 p-2 bg-gray-100 rounded-md">
+                    <summary className="font-semibold cursor-pointer">Show SimpleSequencePlayer</summary>
+                    <div className="mt-2">
+                      <SimpleSequencePlayer
                         clipInfo={remix.clipInfo}
                         script={remix.script}
                         onPlayPauseToggle={() => {}}

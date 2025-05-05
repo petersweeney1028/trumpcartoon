@@ -1,7 +1,7 @@
 import React, { useState, useRef, useEffect, useCallback } from "react";
 import { ClipInfo } from "@shared/schema";
 
-interface SimpleSequencePlayerProps {
+interface FixedSequencePlayerProps {
   clipInfo: ClipInfo;
   script: {
     trump1: string;
@@ -16,17 +16,10 @@ interface SimpleSequencePlayerProps {
 type CharacterSegment = 'trump1' | 'zelensky' | 'trump2' | 'vance';
 
 /**
- * SimpleSequencePlayer - A streamlined video player that plays segments in sequence
- * with proper synchronization between audio and video.
- * 
- * Key improvements:
- * 1. Sets loop=false on videos to prevent unwanted looping
- * 2. Pauses all other media when starting a new segment
- * 3. Uses audio ended event to trigger next segment transition
- * 4. Actively hides inactive videos to prevent overlap
- * 5. Uses simpler state management with fewer timer-based transitions
+ * FixedSequencePlayer - A fixed and correctly implemented version of the sequence player
+ * that properly synchronizes audio and video without playback issues
  */
-const SimpleSequencePlayer: React.FC<SimpleSequencePlayerProps> = ({
+const FixedSequencePlayer: React.FC<FixedSequencePlayerProps> = ({
   clipInfo,
   script,
   onPlayPauseToggle,
@@ -42,10 +35,34 @@ const SimpleSequencePlayer: React.FC<SimpleSequencePlayerProps> = ({
   const [currentTime, setCurrentTime] = useState(0);
   const [totalDuration, setTotalDuration] = useState(0);
   
+  // Track loaded media
+  const [loadedMedia, setLoadedMedia] = useState({
+    trump1: false,
+    zelensky: false,
+    trump2: false,
+    vance: false
+  });
+  
+  // Track media durations
+  const [mediaDurations, setMediaDurations] = useState({
+    trump1: 0,
+    zelensky: 0,
+    trump2: 0,
+    vance: 0
+  });
+  
+  // Store segment boundaries
+  const [segmentBoundaries, setSegmentBoundaries] = useState({
+    trump1: { start: 0, end: 0 },
+    zelensky: { start: 0, end: 0 },
+    trump2: { start: 0, end: 0 },
+    vance: { start: 0, end: 0 }
+  });
+  
   // Media references
   const containerRef = useRef<HTMLDivElement>(null);
   
-  // Keep references to all media elements
+  // Refs for media elements
   const videoRefs = {
     trump1: useRef<HTMLVideoElement>(null),
     zelensky: useRef<HTMLVideoElement>(null),
@@ -60,30 +77,11 @@ const SimpleSequencePlayer: React.FC<SimpleSequencePlayerProps> = ({
     vance: useRef<HTMLAudioElement>(null)
   };
   
-  // Sequence definition
-  const sequence: CharacterSegment[] = ['trump1', 'zelensky', 'trump2', 'vance'];
+  // Animation frame ref for smooth progress updates
+  const animationFrameRef = useRef<number>();
   
-  // Track loaded media and durations
-  const [mediaState, setMediaState] = useState({
-    loaded: {
-      trump1: false,
-      zelensky: false,
-      trump2: false,
-      vance: false
-    },
-    durations: {
-      trump1: 0,
-      zelensky: 0,
-      trump2: 0,
-      vance: 0
-    },
-    boundaries: {
-      trump1: { start: 0, end: 0 },
-      zelensky: { start: 0, end: 0 },
-      trump2: { start: 0, end: 0 },
-      vance: { start: 0, end: 0 }
-    }
-  });
+  // Define the sequence order
+  const sequence: CharacterSegment[] = ['trump1', 'zelensky', 'trump2', 'vance'];
   
   // Create proper paths for resources
   const getStaticPath = (path: string) => {
@@ -94,6 +92,7 @@ const SimpleSequencePlayer: React.FC<SimpleSequencePlayerProps> = ({
     return path;
   };
   
+  // Prepare media paths
   const videoPaths = {
     trump1: getStaticPath(clipInfo.trump1Video),
     zelensky: getStaticPath(clipInfo.zelenskyVideo),
@@ -107,8 +106,6 @@ const SimpleSequencePlayer: React.FC<SimpleSequencePlayerProps> = ({
     trump2: getStaticPath(clipInfo.trump2Audio),
     vance: getStaticPath(clipInfo.vanceAudio)
   };
-  
-  // These functions need to come first to avoid circular dependencies
   
   // Pause all media elements
   const pauseAllMedia = useCallback(() => {
@@ -126,17 +123,26 @@ const SimpleSequencePlayer: React.FC<SimpleSequencePlayerProps> = ({
     });
   }, [sequence]);
   
+  // Get the next segment in sequence
+  const getNextSegment = useCallback((segment: CharacterSegment): CharacterSegment | null => {
+    const currentIndex = sequence.indexOf(segment);
+    if (currentIndex < sequence.length - 1) {
+      return sequence[currentIndex + 1];
+    }
+    return null; // No next segment (end of sequence)
+  }, [sequence]);
+  
   // Play a specific segment
   const playSegment = useCallback((segment: CharacterSegment) => {
     console.log(`Playing segment ${segment}`);
     
-    // 1. First pause all media (important to prevent multiple segments playing)
+    // Pause all media first
     pauseAllMedia();
     
-    // 2. Update current segment state
+    // Update current segment state
     setCurrentSegment(segment);
     
-    // 3. Get references to the current segment's media elements
+    // Get media elements
     const video = videoRefs[segment].current;
     const audio = audioRefs[segment].current;
     
@@ -146,17 +152,17 @@ const SimpleSequencePlayer: React.FC<SimpleSequencePlayerProps> = ({
     }
     
     try {
-      // 4. Reset elements to start position
+      // Reset positions
       video.currentTime = 0;
       audio.currentTime = 0;
       
-      // 5. Set loop=false to prevent unwanted looping
+      // Ensure video doesn't loop
       video.loop = false;
       
-      // 6. Apply mute state to audio
+      // Set mute state
       audio.muted = isMuted;
       
-      // 7. Play both elements with promise handling for autoplay restrictions
+      // Play both elements
       Promise.all([
         video.play().catch(e => console.error(`Error playing ${segment} video:`, e)),
         audio.play().catch(e => console.error(`Error playing ${segment} audio:`, e))
@@ -175,15 +181,6 @@ const SimpleSequencePlayer: React.FC<SimpleSequencePlayerProps> = ({
       console.error('Error in playSegment:', error);
     }
   }, [isMuted, onPlayPauseToggle, pauseAllMedia]);
-
-  // Get the next segment in sequence
-  const getNextSegment = (segment: CharacterSegment): CharacterSegment | null => {
-    const currentIndex = sequence.indexOf(segment);
-    if (currentIndex < sequence.length - 1) {
-      return sequence[currentIndex + 1];
-    }
-    return null; // No next segment (end of sequence)
-  };
   
   // Handle audio loaded event
   const handleAudioLoaded = useCallback((segment: CharacterSegment) => {
@@ -193,16 +190,16 @@ const SimpleSequencePlayer: React.FC<SimpleSequencePlayerProps> = ({
     const duration = audio.duration;
     console.log(`Audio loaded for ${segment}, duration:`, duration);
     
-    setMediaState(prev => ({
+    // Update durations state
+    setMediaDurations(prev => ({
       ...prev,
-      loaded: {
-        ...prev.loaded,
-        [segment]: true
-      },
-      durations: {
-        ...prev.durations,
-        [segment]: duration
-      }
+      [segment]: duration
+    }));
+    
+    // Mark segment as loaded
+    setLoadedMedia(prev => ({
+      ...prev,
+      [segment]: true
     }));
   }, []);
   
@@ -211,45 +208,39 @@ const SimpleSequencePlayer: React.FC<SimpleSequencePlayerProps> = ({
     console.log(`Video loaded for ${segment}`);
   }, []);
   
-  // Calculate segment boundaries once all media is loaded
+  // Calculate segment boundaries when all media is loaded
   useEffect(() => {
-    const allLoaded = Object.values(mediaState.loaded).every(loaded => loaded);
+    // Check if all segments are loaded
+    const allLoaded = Object.values(loadedMedia).every(loaded => loaded);
     if (!allLoaded) return;
     
-    // Prevent recalculating boundaries if they're already set
+    // Skip if already calculated
     if (totalDuration > 0) return;
     
     console.log("All media loaded. Calculating boundaries...");
     
-    // Calculate segment boundaries and total duration
+    // Calculate boundaries and total duration
     let totalTime = 0;
-    const newBoundaries = { ...mediaState.boundaries };
+    const boundaries = { ...segmentBoundaries };
     
     sequence.forEach(segment => {
-      const duration = mediaState.durations[segment];
-      newBoundaries[segment] = {
+      const duration = mediaDurations[segment];
+      boundaries[segment] = {
         start: totalTime,
         end: totalTime + duration
       };
       totalTime += duration;
     });
     
-    // Update media state only once
-    setMediaState(prev => ({
-      ...prev,
-      boundaries: newBoundaries
-    }));
-    
+    setSegmentBoundaries(boundaries);
     setTotalDuration(totalTime);
     setLoading(false);
     
-    console.log("Segment boundaries:", newBoundaries);
+    console.log("Segment boundaries:", boundaries);
     console.log("Total duration:", totalTime);
-    
-    // Auto-play if enabled (we'll handle this in a separate effect)
-  }, [mediaState.loaded, mediaState.durations, sequence, totalDuration]);
+  }, [loadedMedia, mediaDurations, sequence, segmentBoundaries, totalDuration]);
   
-  // Update progress based on current time
+  // Update progress bar
   useEffect(() => {
     if (loading || totalDuration === 0) return;
     
@@ -257,135 +248,153 @@ const SimpleSequencePlayer: React.FC<SimpleSequencePlayerProps> = ({
     setProgress(progressPercentage);
   }, [currentTime, totalDuration, loading]);
   
-  // Set up audio ended event handlers
+  // Listen for audio ended events to trigger next segment
   useEffect(() => {
-    // Function to handle when an audio segment ends
-    const handleAudioEnded = (segment: CharacterSegment) => {
-      console.log(`Audio segment ${segment} ended`);
-      
-      // Get the next segment in sequence
-      const nextSegment = getNextSegment(segment);
-      
-      if (nextSegment) {
-        // Play the next segment
-        playSegment(nextSegment);
-      } else {
-        // End of sequence reached
-        console.log("End of sequence reached");
-        setIsPlaying(false);
-        if (onPlayPauseToggle) onPlayPauseToggle(false);
-        setCurrentTime(0);
-      }
-    };
+    // Handlers object to store references for cleanup
+    const handlers: Record<CharacterSegment, EventListener> = {} as any;
     
-    // Store event handler functions to properly remove them later
-    const eventHandlers: {[key in CharacterSegment]?: () => void} = {};
-    
-    // Attach ended event listeners to all audio elements
+    // Create handler function for each segment
     sequence.forEach(segment => {
+      const handleEnded = () => {
+        console.log(`Audio for ${segment} ended`);
+        
+        // Get next segment
+        const nextSegment = getNextSegment(segment);
+        
+        if (nextSegment) {
+          // Play next segment
+          playSegment(nextSegment);
+        } else {
+          // End of sequence
+          console.log("End of sequence reached");
+          setIsPlaying(false);
+          if (onPlayPauseToggle) onPlayPauseToggle(false);
+          setCurrentTime(0);
+        }
+      };
+      
+      // Store handler reference
+      handlers[segment] = handleEnded;
+      
+      // Add event listener
       const audio = audioRefs[segment].current;
       if (audio) {
-        // Create a named handler for this segment that we can remove later
-        const handler = () => handleAudioEnded(segment);
-        eventHandlers[segment] = handler;
-        
-        // Remove any existing listeners first to prevent duplicates
-        audio.removeEventListener('ended', eventHandlers[segment]!);
-        
-        // Add the new listener
-        audio.addEventListener('ended', handler);
+        audio.addEventListener('ended', handleEnded);
       }
     });
     
-    // Clean up event listeners on unmount or when dependencies change
+    // Clean up listeners on unmount
     return () => {
       sequence.forEach(segment => {
         const audio = audioRefs[segment].current;
-        if (audio && eventHandlers[segment]) {
-          audio.removeEventListener('ended', eventHandlers[segment]!);
+        if (audio) {
+          audio.removeEventListener('ended', handlers[segment]);
         }
       });
     };
-  }, [sequence, onPlayPauseToggle, getNextSegment, playSegment]);
+  }, [sequence, getNextSegment, playSegment, onPlayPauseToggle]);
   
   // Update current time during playback
   useEffect(() => {
     if (!isPlaying || loading) return;
     
-    let animationFrame: number;
+    // Cancel any existing animation frame
+    if (animationFrameRef.current) {
+      cancelAnimationFrame(animationFrameRef.current);
+    }
     
+    // Update function for animation frame
     const updateTime = () => {
-      // Get current segment's audio element
       const audio = audioRefs[currentSegment].current;
       
       if (audio) {
-        // Get the current time in the audio
-        const segmentTime = audio.currentTime;
+        // Calculate global time based on segment start + current audio time
+        const segmentStart = segmentBoundaries[currentSegment].start;
+        const globalTime = segmentStart + audio.currentTime;
         
-        // Calculate global time based on segment boundaries
-        const segmentStart = mediaState.boundaries[currentSegment].start;
-        const globalTime = segmentStart + segmentTime;
-        
-        // Update current time state
         setCurrentTime(globalTime);
       }
       
-      // Continue updating while playing
-      animationFrame = requestAnimationFrame(updateTime);
+      // Continue loop
+      animationFrameRef.current = requestAnimationFrame(updateTime);
     };
     
-    // Start updating time
-    animationFrame = requestAnimationFrame(updateTime);
+    // Start the update loop
+    animationFrameRef.current = requestAnimationFrame(updateTime);
     
-    // Clean up animation frame on state change
+    // Clean up
     return () => {
-      cancelAnimationFrame(animationFrame);
+      if (animationFrameRef.current) {
+        cancelAnimationFrame(animationFrameRef.current);
+      }
     };
-  }, [isPlaying, currentSegment, mediaState.boundaries, loading]);
+  }, [isPlaying, currentSegment, segmentBoundaries, loading]);
   
-  // We moved these functions to the top of the component
+  // Handle autoplay
+  useEffect(() => {
+    if (autoPlay && !loading && totalDuration > 0) {
+      console.log("Starting autoplay");
+      const timer = setTimeout(() => {
+        playSegment('trump1');
+      }, 200);
+      
+      return () => clearTimeout(timer);
+    }
+  }, [autoPlay, loading, totalDuration, playSegment]);
   
   // Toggle play/pause
   const togglePlayPause = useCallback(() => {
     if (loading) return;
     
     if (isPlaying) {
-      // Pause current playback
+      // Pause playback
       pauseAllMedia();
       setIsPlaying(false);
       if (onPlayPauseToggle) onPlayPauseToggle(false);
     } else {
-      // Find which segment should be playing based on current time
-      let segmentToPlay = sequence[0]; // Default to first segment
+      // Find current segment based on time
+      let segmentToPlay = sequence[0];
       
       for (const segment of sequence) {
-        const { start, end } = mediaState.boundaries[segment];
+        const { start, end } = segmentBoundaries[segment];
         if (currentTime >= start && currentTime < end) {
           segmentToPlay = segment;
           break;
         }
       }
       
-      // Calculate offset within the segment
-      const segmentStart = mediaState.boundaries[segmentToPlay].start;
+      // Calculate offset within segment
+      const segmentStart = segmentBoundaries[segmentToPlay].start;
       const segmentOffset = Math.max(0, currentTime - segmentStart);
       
-      // Play the segment from the correct offset
+      // Get media elements
       const audio = audioRefs[segmentToPlay].current;
       const video = videoRefs[segmentToPlay].current;
       
       if (audio && video) {
-        // Set the correct time position
+        // Position audio at offset
         audio.currentTime = segmentOffset;
-        video.currentTime = 0; // Always reset video to start
+        
+        // Start playback
+        setCurrentSegment(segmentToPlay);
         
         // Play segment
-        playSegment(segmentToPlay);
+        Promise.all([
+          video.play().catch(e => console.error(`Error playing ${segmentToPlay} video:`, e)),
+          audio.play().catch(e => console.error(`Error playing ${segmentToPlay} audio:`, e))
+        ])
+          .then(() => {
+            setIsPlaying(true);
+            if (onPlayPauseToggle) onPlayPauseToggle(true);
+          })
+          .catch(error => {
+            console.error('Error resuming playback:', error);
+          });
       }
     }
-  }, [isPlaying, loading, currentTime, mediaState.boundaries, sequence, playSegment, pauseAllMedia, onPlayPauseToggle]);
+  }, [isPlaying, loading, currentTime, segmentBoundaries, sequence, pauseAllMedia, onPlayPauseToggle]);
   
-  // Toggle mute state
+  // Toggle mute
   const toggleMute = useCallback(() => {
     const newMuteState = !isMuted;
     setIsMuted(newMuteState);
@@ -399,23 +408,19 @@ const SimpleSequencePlayer: React.FC<SimpleSequencePlayerProps> = ({
     });
   }, [isMuted, sequence]);
   
-  // Skip to a specific segment
+  // Skip to segment
   const skipToSegment = useCallback((index: number) => {
     if (loading || index < 0 || index >= sequence.length) return;
     
     const segment = sequence[index];
     
-    // If currently playing, start the new segment
     if (isPlaying) {
       playSegment(segment);
     } else {
-      // Just update segment without playing
       setCurrentSegment(segment);
-      
-      // Set current time to segment start
-      setCurrentTime(mediaState.boundaries[segment].start);
+      setCurrentTime(segmentBoundaries[segment].start);
     }
-  }, [loading, sequence, isPlaying, playSegment, mediaState.boundaries]);
+  }, [loading, sequence, isPlaying, playSegment, segmentBoundaries]);
   
   // Handle progress bar click
   const handleProgressClick = useCallback((e: React.MouseEvent<HTMLDivElement>) => {
@@ -426,49 +431,52 @@ const SimpleSequencePlayer: React.FC<SimpleSequencePlayerProps> = ({
     const clickPosition = (e.clientX - rect.left) / rect.width;
     const newTime = clickPosition * totalDuration;
     
-    // Find which segment this time falls into
+    // Find which segment this time belongs to
     let segmentToPlay = sequence[0];
     for (const segment of sequence) {
-      const { start, end } = mediaState.boundaries[segment];
+      const { start, end } = segmentBoundaries[segment];
       if (newTime >= start && newTime < end) {
         segmentToPlay = segment;
         break;
       }
     }
     
-    // Calculate offset within the segment
-    const segmentStart = mediaState.boundaries[segmentToPlay].start;
+    // Calculate offset within segment
+    const segmentStart = segmentBoundaries[segmentToPlay].start;
     const segmentOffset = Math.max(0, newTime - segmentStart);
     
     // Update current time
     setCurrentTime(newTime);
     
-    // If playing, restart with the new segment and offset
+    // Handle based on play state
     if (isPlaying) {
-      // Pause everything first
+      // Pause everything
       pauseAllMedia();
       
-      // Set segment
+      // Update segment
       setCurrentSegment(segmentToPlay);
       
-      // Set correct time position
+      // Get media elements
       const audio = audioRefs[segmentToPlay].current;
       const video = videoRefs[segmentToPlay].current;
       
       if (audio && video) {
+        // Position audio at offset
         audio.currentTime = segmentOffset;
-        video.currentTime = 0; // Always reset video to start
         
-        // Play the segment
-        playSegment(segmentToPlay);
+        // Play
+        Promise.all([
+          video.play().catch(e => console.error(`Error playing ${segmentToPlay} video:`, e)),
+          audio.play().catch(e => console.error(`Error playing ${segmentToPlay} audio:`, e))
+        ]);
       }
     } else {
-      // Just update segment without playing
+      // Just update segment
       setCurrentSegment(segmentToPlay);
     }
-  }, [loading, totalDuration, sequence, mediaState.boundaries, isPlaying, pauseAllMedia, playSegment]);
+  }, [loading, totalDuration, sequence, segmentBoundaries, isPlaying, pauseAllMedia]);
   
-  // Format time for display
+  // Format time display
   const formatTime = useCallback((timeInSeconds: number) => {
     const minutes = Math.floor(timeInSeconds / 60);
     const seconds = Math.floor(timeInSeconds % 60);
@@ -486,28 +494,17 @@ const SimpleSequencePlayer: React.FC<SimpleSequencePlayerProps> = ({
     }
   }, [isPlaying]);
   
-  // Handle autoplay (only once boundaries are calculated)
-  useEffect(() => {
-    // Only proceed if autoPlay is true AND loading is complete
-    if (autoPlay && !loading && totalDuration > 0) {
-      console.log("Triggering autoplay with delay");
-      // Small delay to ensure everything is ready
-      const timer = setTimeout(() => {
-        playSegment('trump1');
-      }, 300);
-      
-      return () => clearTimeout(timer);
-    }
-  }, [autoPlay, loading, totalDuration, playSegment]);
-  
   // Cleanup on unmount
   useEffect(() => {
     return () => {
       pauseAllMedia();
+      if (animationFrameRef.current) {
+        cancelAnimationFrame(animationFrameRef.current);
+      }
     };
   }, [pauseAllMedia]);
   
-  // Current caption from script
+  // Current caption
   const currentCaption = script[currentSegment];
   
   return (
@@ -554,10 +551,12 @@ const SimpleSequencePlayer: React.FC<SimpleSequencePlayerProps> = ({
           ))}
         </div>
         
-        {/* Play button overlay (visible when paused) */}
+        {/* Play button overlay */}
         {!isPlaying && !loading && (
-          <div className="absolute inset-0 flex items-center justify-center bg-black bg-opacity-30 z-10"
-               onClick={togglePlayPause}>
+          <div 
+            className="absolute inset-0 flex items-center justify-center bg-black bg-opacity-30 z-10"
+            onClick={togglePlayPause}
+          >
             <button
               className="w-20 h-20 bg-primary rounded-full flex items-center justify-center shadow-lg hover:bg-yellow-400 transition-colors"
               aria-label="Play video"
@@ -717,4 +716,4 @@ const SimpleSequencePlayer: React.FC<SimpleSequencePlayerProps> = ({
   );
 };
 
-export default SimpleSequencePlayer;
+export default FixedSequencePlayer;
