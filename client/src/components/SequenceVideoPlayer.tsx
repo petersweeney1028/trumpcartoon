@@ -161,7 +161,18 @@ const SequenceVideoPlayer = ({
     
     console.log("Segment boundaries:", boundaries);
     console.log("Total duration:", totalTime);
-  }, [loadedSegments, audioDurations]);
+    
+    // Start autoplay if enabled
+    if (autoPlay) {
+      // Use small timeout to allow UI to update first
+      setTimeout(() => {
+        setIsPlaying(true);
+        if (onPlayPauseToggle) {
+          onPlayPauseToggle(true);
+        }
+      }, 100);
+    }
+  }, [loadedSegments, audioDurations, autoPlay, onPlayPauseToggle]);
   
   // Get the current segment based on playback time
   const getSegmentForTime = useCallback((time: number): CharacterSegment => {
@@ -199,20 +210,33 @@ const SequenceVideoPlayer = ({
     if (!isPlaying || initializing || !allMediaLoaded) return;
     
     setCurrentTime(prevTime => {
-      const newTime = Math.min(prevTime + (1/60), duration); // Update 60 times per second
+      // Update 60 times per second for smooth playback
+      const newTime = Math.min(prevTime + (1/60), duration);
+      
+      // Check if we need to transition to next segment
+      const currentSeg = getSegmentForTime(prevTime);
+      const nextSeg = getSegmentForTime(newTime);
+      
+      // Log segment transitions for debugging
+      if (currentSeg !== nextSeg) {
+        console.log(`Auto-transitioning from ${currentSeg} to ${nextSeg} at time ${newTime}`);
+      }
       
       // Check if playback has ended
       if (newTime >= duration) {
+        console.log("Playback complete, resetting to beginning");
         setIsPlaying(false);
         if (onPlayPauseToggle) onPlayPauseToggle(false);
-        return 0; // Reset to beginning
+        // Set a small timeout before resetting to avoid race conditions
+        setTimeout(() => setCurrentTime(0), 50);
+        return prevTime; // Return current time to avoid jump
       }
       
       return newTime;
     });
     
     animationRef.current = requestAnimationFrame(updatePlayback);
-  }, [isPlaying, duration, onPlayPauseToggle, initializing, allMediaLoaded]);
+  }, [isPlaying, duration, onPlayPauseToggle, initializing, allMediaLoaded, getSegmentForTime]);
   
   // Start/stop animation frame based on playback state
   useEffect(() => {
@@ -247,6 +271,16 @@ const SequenceVideoPlayer = ({
       vance: vanceAudioRef
     };
     
+    console.log(`Switching to segment: ${currentSegment} at time ${currentTime}`);
+    
+    // Pause all audio first to prevent overlap
+    sequence.forEach(segment => {
+      const audioRef = audioRefs[segment];
+      if (audioRef.current && segment !== currentSegment) {
+        audioRef.current.pause();
+      }
+    });
+    
     // Hide all videos first
     sequence.forEach(segment => {
       const videoRef = videoRefs[segment];
@@ -259,15 +293,12 @@ const SequenceVideoPlayer = ({
           // Hide other segments
           videoRef.current.style.opacity = '0';
           videoRef.current.style.zIndex = '0';
+          
+          // If we were previously playing, pause all other videos
+          if (isPlaying) {
+            videoRef.current.pause();
+          }
         }
-      }
-    });
-    
-    // Pause all audio
-    sequence.forEach(segment => {
-      const audioRef = audioRefs[segment];
-      if (audioRef.current) {
-        audioRef.current.pause();
       }
     });
     
@@ -277,23 +308,45 @@ const SequenceVideoPlayer = ({
     
     if (currentVideo && currentAudio) {
       const { start } = segmentBoundaries[currentSegment];
-      const segmentTime = currentTime - start;
+      const segmentTime = Math.max(0, currentTime - start);
       
-      // Reset and play video
-      currentVideo.currentTime = 0;
+      console.log(`Playing ${currentSegment} at segment time ${segmentTime}`);
+      
+      // First make sure audio is ready
+      currentAudio.muted = isMuted;
+      currentAudio.currentTime = segmentTime;
+      
+      // Reset and prepare video
+      currentVideo.currentTime = 0; // Always reset video position to start
       currentVideo.loop = true; // Loop video if audio is longer
       
       if (isPlaying) {
-        // Only play if we're supposed to be playing
-        currentVideo.play().catch(e => console.error(`Error playing ${currentSegment} video:`, e));
+        // Create promises for both media elements
+        const videoPromise = currentVideo.play()
+          .catch(e => console.error(`Error playing ${currentSegment} video:`, e));
         
-        // Set audio time and play
-        currentAudio.currentTime = segmentTime;
-        currentAudio.muted = isMuted;
-        currentAudio.play().catch(e => console.error(`Error playing ${currentSegment} audio:`, e));
+        const audioPromise = currentAudio.play()
+          .catch(e => console.error(`Error playing ${currentSegment} audio:`, e));
+        
+        // Handle synchronization
+        Promise.all([videoPromise, audioPromise])
+          .then(() => {
+            console.log(`${currentSegment} video and audio playing in sync`);
+          })
+          .catch(err => {
+            console.error('Error synchronizing media:', err);
+            
+            // Try again with timeout as fallback
+            setTimeout(() => {
+              if (isPlaying && currentSegment === getSegmentForTime(currentTime)) {
+                currentVideo.play().catch(() => {});
+                currentAudio.play().catch(() => {});
+              }
+            }, 100);
+          });
       }
     }
-  }, [currentSegment, isPlaying, isMuted, currentTime, segmentBoundaries, sequence, initializing, allMediaLoaded]);
+  }, [currentSegment, isPlaying, isMuted, currentTime, segmentBoundaries, sequence, initializing, allMediaLoaded, getSegmentForTime]);
   
   // Play/pause toggling
   const togglePlayPause = useCallback(() => {
