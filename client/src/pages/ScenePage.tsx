@@ -9,6 +9,7 @@ import SequenceVideoPlayer from "@/components/SequenceVideoPlayer";
 import DirectSequencePlayer from "@/components/DirectSequencePlayer";
 import SimpleSequencePlayer from "@/components/SimpleSequencePlayer";
 import FixedSequencePlayer from "@/components/FixedSequencePlayer";
+import BasicSequencePlayer from "@/components/BasicSequencePlayer";
 import DebugPlayer from "@/components/DebugPlayer";
 import SharePanel from "@/components/SharePanel";
 import RemixDetails from "@/components/RemixDetails";
@@ -87,10 +88,10 @@ const ScenePage = () => {
           <div className="lg:w-7/12">
             {remix.clipInfo ? (
               <>
-                <div className="bg-green-100 p-2 mb-2 text-sm rounded-md">
-                  Using FixedSequencePlayer (new implementation with proper audio/video sync)
+                <div className="bg-blue-100 p-2 mb-2 text-sm rounded-md">
+                  Using BasicSequencePlayer (ultra-simple implementation with minimal complexity)
                 </div>
-                <FixedSequencePlayer
+                <BasicSequencePlayer
                   clipInfo={remix.clipInfo}
                   script={remix.script}
                   onPlayPauseToggle={handlePlayPauseToggle}
