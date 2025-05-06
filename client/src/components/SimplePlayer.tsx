@@ -1,5 +1,5 @@
-import React, { useState, useRef, useEffect } from "react";
-import { ClipInfo } from "@shared/schema";
+import React, { useState, useRef, useEffect } from 'react';
+import type { ClipInfo } from '@shared/schema';
 
 interface SimplePlayerProps {
   clipInfo: ClipInfo;
@@ -11,820 +11,195 @@ interface SimplePlayerProps {
   };
   onPlayPauseToggle?: (isPlaying: boolean) => void;
   autoPlay?: boolean;
-  videoUrl?: string; // Optional URL to a combined video file
 }
 
-const SimplePlayer = ({
+type CharacterSegment = 'trump1' | 'zelensky' | 'trump2' | 'vance';
+
+const SimplePlayer: React.FC<SimplePlayerProps> = ({
   clipInfo,
   script,
   onPlayPauseToggle,
   autoPlay = false,
-  videoUrl
-}: SimplePlayerProps) => {
-  const [isPlaying, setIsPlaying] = useState(autoPlay);
-  const [currentTime, setCurrentTime] = useState(0);
-  const [duration, setDuration] = useState(0);
-  const [progress, setProgress] = useState(0);
-  const [isMuted, setIsMuted] = useState(false);
-  const [showControls, setShowControls] = useState(true);
-  const [currentCaption, setCurrentCaption] = useState(script.trump1);
+}) => {
+  const [isPlaying, setIsPlaying] = useState(false);
+  const [isLoading, setIsLoading] = useState(true);
+  const [currentSegment, setCurrentSegment] = useState<CharacterSegment>('trump1');
   
+  // Refs for media elements
   const videoRef = useRef<HTMLVideoElement>(null);
-  const containerRef = useRef<HTMLDivElement>(null);
   
-  // Get sequence of characters and their start times
-  // Use longer durations to match audio file lengths
-  const sequence = [
-    { character: 'trump1', start: 0, caption: script.trump1 },
-    { character: 'zelensky', start: 7, caption: script.zelensky },
-    { character: 'trump2', start: 14, caption: script.trump2 },
-    { character: 'vance', start: 21, caption: script.vance }
-  ];
+  // Simple order of segments
+  const segments: CharacterSegment[] = ['trump1', 'zelensky', 'trump2', 'vance'];
   
-  // Total duration of all segments
-  const totalDuration = 28; // Ensure we have enough time for all segments
+  // Get current video source
+  const videoSrc = 
+    currentSegment === 'trump1' ? `/static${clipInfo.trump1Video}` :
+    currentSegment === 'zelensky' ? `/static${clipInfo.zelenskyVideo}` :
+    currentSegment === 'trump2' ? `/static${clipInfo.trump2Video}` :
+    `/static${clipInfo.vanceVideo}`;
   
-  // Create proper paths by prepending /static to the paths
-  const getStaticPath = (path: string) => {
-    // Handle paths that start with /clips or /voices - add /static prefix
-    if (path.startsWith('/clips/') || path.startsWith('/voices/')) {
-      return `/static${path}`;
-    }
-    // Path already has static prefix
-    if (path.startsWith('/static/')) return path;
-    // Default case - just return as is
-    return path;
-  };
+  const audioSrc = 
+    currentSegment === 'trump1' ? `/static${clipInfo.trump1Audio}` :
+    currentSegment === 'zelensky' ? `/static${clipInfo.zelenskyAudio}` :
+    currentSegment === 'trump2' ? `/static${clipInfo.trump2Audio}` :
+    `/static${clipInfo.vanceAudio}`;
   
-  // Video paths for each segment
-  const videoPaths = {
-    trump1: getStaticPath(clipInfo.trump1Video),
-    zelensky: getStaticPath(clipInfo.zelenskyVideo),
-    trump2: getStaticPath(clipInfo.trump2Video),
-    vance: getStaticPath(clipInfo.vanceVideo)
-  };
-  
-  // Initialize with the first video
-  const [currentVideoSrc, setCurrentVideoSrc] = useState(videoPaths.trump1);
-  
-  // Set caption based on current time
-  useEffect(() => {
-    if (currentTime <= 0) {
-      setCurrentCaption(script.trump1);
-      return;
-    }
-    
-    for (let i = sequence.length - 1; i >= 0; i--) {
-      if (currentTime >= sequence[i].start) {
-        setCurrentCaption(sequence[i].caption);
-        break;
-      }
-    }
-  }, [currentTime]);
-  
-  // Play/pause video
+  // Handle video loaded
   useEffect(() => {
     const video = videoRef.current;
     if (!video) return;
     
-    if (isPlaying) {
-      video.play().catch(err => {
-        console.error('Error playing video:', err);
+    setIsLoading(true);
+    
+    // Log loading
+    console.log(`Loading segment: ${currentSegment}`);
+    console.log(`Video source: ${videoSrc}`);
+    
+    const handleCanPlay = () => {
+      console.log(`Video can play for ${currentSegment}`);
+      setIsLoading(false);
+      
+      // If autoplay is enabled and not already playing, start playback
+      if (autoPlay && !isPlaying) {
+        console.log("Trying to autoplay...");
+        const playPromise = video.play();
+        
+        if (playPromise !== undefined) {
+          playPromise
+            .then(() => {
+              console.log("Autoplay successful");
+              setIsPlaying(true);
+              if (onPlayPauseToggle) onPlayPauseToggle(true);
+            })
+            .catch(error => {
+              console.error("Autoplay failed:", error);
+              // Don't change isPlaying state - user will need to click
+            });
+        }
+      }
+    };
+    
+    const handleEnded = () => {
+      console.log(`Video for ${currentSegment} ended`);
+      
+      // Find next segment index
+      const currentIndex = segments.indexOf(currentSegment);
+      if (currentIndex >= 0 && currentIndex < segments.length - 1) {
+        // Move to next segment
+        const nextSegment = segments[currentIndex + 1];
+        console.log(`Moving to next segment: ${nextSegment}`);
+        setCurrentSegment(nextSegment);
+      } else {
+        // End of sequence
+        console.log('End of sequence reached');
         setIsPlaying(false);
         if (onPlayPauseToggle) onPlayPauseToggle(false);
-      });
-    } else {
-      video.pause();
-    }
-    
-    if (onPlayPauseToggle) {
-      onPlayPauseToggle(isPlaying);
-    }
-  }, [isPlaying, onPlayPauseToggle]);
-  
-  // Create refs for audio elements
-  const trump1AudioRef = useRef<HTMLAudioElement>(null);
-  const zelenskyAudioRef = useRef<HTMLAudioElement>(null);
-  const trump2AudioRef = useRef<HTMLAudioElement>(null);
-  const vanceAudioRef = useRef<HTMLAudioElement>(null);
-  
-  // Audio source paths
-  const audioSources = {
-    trump1: getStaticPath(clipInfo.trump1Audio),
-    zelensky: getStaticPath(clipInfo.zelenskyAudio),
-    trump2: getStaticPath(clipInfo.trump2Audio),
-    vance: getStaticPath(clipInfo.vanceAudio),
-  };
-  
-  // Get current segment based on time
-  const getCurrentSegment = (time: number): { character: string, index: number } => {
-    for (let i = sequence.length - 1; i >= 0; i--) {
-      if (time >= sequence[i].start) {
-        return { character: sequence[i].character, index: i };
       }
-    }
-    return { character: sequence[0].character, index: 0 };
-  };
+    };
+    
+    // Set up event listeners
+    video.addEventListener('canplay', handleCanPlay);
+    video.addEventListener('ended', handleEnded);
+    
+    // Clean up
+    return () => {
+      video.removeEventListener('canplay', handleCanPlay);
+      video.removeEventListener('ended', handleEnded);
+    };
+  }, [currentSegment, videoSrc, autoPlay, isPlaying, onPlayPauseToggle, segments]);
   
-  // Track the current character segment
-  const [currentVideoSegment, setCurrentVideoSegment] = useState<string>('trump1');
-
-  // Track video time and progress
+  // Manage play state
   useEffect(() => {
     const video = videoRef.current;
     if (!video) return;
     
-    // Make sure duration is set correctly
-    setDuration(totalDuration);
-    
-    // If we're using the combined video, handle time updates differently
-    if (videoUrl) {
-      // For combined video, we can use the native timeupdate event
-      const handleNativeTimeUpdate = () => {
-        if (!videoRef.current) return;
-        
-        // Use the video's actual current time
-        const newTime = videoRef.current.currentTime;
-        setCurrentTime(newTime);
-        
-        // Calculate progress based on video's actual duration
-        const videoDuration = videoRef.current.duration || totalDuration;
-        setProgress((newTime / videoDuration) * 100);
-        
-        // Update caption based on current time
-        for (let i = sequence.length - 1; i >= 0; i--) {
-          if (newTime >= sequence[i].start) {
-            setCurrentCaption(sequence[i].caption);
-            break;
-          }
-        }
-        
-        // End playback if we've reached the end
-        if (newTime >= videoDuration - 0.1) {
+    if (isPlaying && !isLoading) {
+      console.log(`Playing video: ${currentSegment}`);
+      const playPromise = video.play();
+      
+      if (playPromise !== undefined) {
+        playPromise.catch(error => {
+          console.error("Error playing video:", error);
           setIsPlaying(false);
-          if (onPlayPauseToggle) onPlayPauseToggle(false);
-          if (videoRef.current) videoRef.current.currentTime = 0;
-        }
-      };
-      
-      // Use the native timeupdate event
-      video.addEventListener('timeupdate', handleNativeTimeUpdate);
-      
-      // Clean up
-      return () => {
-        video.removeEventListener('timeupdate', handleNativeTimeUpdate);
-      };
-    } else {
-      // Original logic for segment-based playback
-      const handleTimeUpdate = () => {
-        // Use our custom time tracking
-        setCurrentTime(prev => {
-          const newTime = prev + 0.1; // Increment by a small amount each update
-          
-          // Reset when we reach total duration
-          if (newTime >= totalDuration) {
-            setIsPlaying(false);
-            if (onPlayPauseToggle) onPlayPauseToggle(false);
-            return 0;
-          }
-          
-          // Get current segment
-          const { character } = getCurrentSegment(newTime);
-          
-          // If we've moved to a new segment, switch the video source
-          if (character !== currentVideoSegment) {
-            console.log(`Switching from ${currentVideoSegment} to ${character}`);
-            
-            // Update video source if we changed segments
-            if (videoRef.current) {
-              const wasPlaying = !videoRef.current.paused;
-              
-              // Pause current video first to avoid conflicts
-              videoRef.current.pause();
-              
-              // Update the video src state which will trigger the video element to change 
-              setCurrentVideoSrc(videoPaths[character as keyof typeof videoPaths]);
-              
-              // Set this before attempting to play to avoid blocking
-              setCurrentVideoSegment(character);
-              
-              // If we were playing, resume playback in the new segment after a small delay
-              // This delay is crucial to allow the browser to load the new video before playing
-              if (wasPlaying) {
-                // Add event listener for loadeddata to ensure video is ready to play
-                const handleVideoLoaded = () => {
-                  if (videoRef.current) {
-                    // Reset time to the beginning
-                    videoRef.current.currentTime = 0;
-                    
-                    // Play the video
-                    videoRef.current.play().catch(e => {
-                      console.error(`Error playing ${character} video after load:`, e);
-                    });
-                    
-                    // Remove event listener
-                    videoRef.current.removeEventListener('loadeddata', handleVideoLoaded);
-                  }
-                };
-                
-                // Add event listener
-                videoRef.current.addEventListener('loadeddata', handleVideoLoaded);
-              }
-            }
-          }
-          
-          // Potentially start playing appropriate audio
-          if (Math.floor(prev) !== Math.floor(newTime)) {
-            // At each whole second boundary, check if we need to switch audio
-            const audioRefs = {
-              trump1: trump1AudioRef,
-              zelensky: zelenskyAudioRef,
-              trump2: trump2AudioRef,
-              vance: vanceAudioRef
-            };
-            
-            // Get current segment
-            const currentSegRef = audioRefs[character as keyof typeof audioRefs];
-            
-            // Try to play this segment's audio
-            if (currentSegRef?.current && !isMuted) {
-              Object.values(audioRefs).forEach(ref => {
-                if (ref && ref !== currentSegRef && ref.current) {
-                  ref.current.pause();
-                }
-              });
-              
-              if (currentSegRef.current.paused) {
-                currentSegRef.current.currentTime = 0;
-                currentSegRef.current.play().catch(e => {
-                  console.error(`Error playing ${character} audio:`, e);
-                });
-              }
-            }
-          }
-          
-          return newTime;
         });
-        
-        // Calculate progress based on our total duration
-        setProgress((currentTime / totalDuration) * 100);
-      };
-      
-      // Simulate timeupdate with our own interval for more precise control
-      let intervalId: number;
-      if (isPlaying) {
-        intervalId = window.setInterval(handleTimeUpdate, 100);
       }
-      
-      const handleEnded = () => {
-        // Don't end playback when video ends, we'll handle that ourselves
-        if (video.currentTime >= video.duration - 0.1) {
-          video.currentTime = 0;
-          video.play().catch(err => console.error('Error looping video:', err));
-        }
-      };
-      
-      video.addEventListener('ended', handleEnded);
-      
-      return () => {
-        if (intervalId) clearInterval(intervalId);
-        video.removeEventListener('ended', handleEnded);
-      };
+    } else if (!isPlaying && !isLoading) {
+      console.log(`Pausing video: ${currentSegment}`);
+      video.pause();
     }
-  }, [isPlaying, currentTime, totalDuration, isMuted, onPlayPauseToggle, currentVideoSegment, videoPaths, videoUrl]);
+  }, [isPlaying, isLoading, currentSegment]);
   
-  const togglePlayPause = () => {
+  const handlePlayPauseClick = () => {
+    console.log(`Toggling play state from ${isPlaying ? 'playing' : 'paused'} to ${!isPlaying ? 'playing' : 'paused'}`);
     setIsPlaying(!isPlaying);
-  };
-  
-  const toggleMute = () => {
-    // Toggle mute state
-    const newMutedState = !isMuted;
-    setIsMuted(newMutedState);
-    
-    // If we're using a combined video, only mute/unmute the video element
-    if (videoUrl) {
-      if (videoRef.current) {
-        videoRef.current.muted = newMutedState;
-      }
-      return;
-    }
-    
-    // For segment-based playback, mute/unmute video and audio elements
-    // Mute/unmute video
-    if (videoRef.current) {
-      videoRef.current.muted = newMutedState;
-    }
-    
-    // Mute/unmute all audio elements
-    [trump1AudioRef, zelenskyAudioRef, trump2AudioRef, vanceAudioRef].forEach(ref => {
-      if (ref.current) {
-        ref.current.muted = newMutedState;
-      }
-    });
-    
-    // If we're unmuting and playing, try to start the appropriate audio
-    if (!newMutedState && isPlaying) {
-      const { character } = getCurrentSegment(currentTime);
-      const audioRefs = {
-        trump1: trump1AudioRef,
-        zelensky: zelenskyAudioRef,
-        trump2: trump2AudioRef,
-        vance: vanceAudioRef
-      };
-      
-      const currentAudioRef = audioRefs[character as keyof typeof audioRefs];
-      if (currentAudioRef?.current) {
-        // Try to play the current segment's audio
-        currentAudioRef.current.currentTime = 0;
-        currentAudioRef.current.play().catch(err => {
-          console.error(`Error playing ${character} audio after unmute:`, err);
-        });
-      }
-    }
-  };
-  
-  const formatTime = (timeInSeconds: number) => {
-    const minutes = Math.floor(timeInSeconds / 60);
-    const seconds = Math.floor(timeInSeconds % 60);
-    return `${minutes}:${seconds < 10 ? '0' : ''}${seconds}`;
-  };
-  
-  const handleProgressClick = (e: React.MouseEvent<HTMLDivElement>) => {
-    if (!videoRef.current) return;
-    
-    const progressBar = e.currentTarget;
-    const rect = progressBar.getBoundingClientRect();
-    const clickPosition = (e.clientX - rect.left) / rect.width;
-    
-    if (videoUrl) {
-      // If we're using the combined video, it's much simpler
-      const videoDuration = videoRef.current.duration || totalDuration;
-      const newTime = clickPosition * videoDuration;
-      
-      // Set the video time directly
-      videoRef.current.currentTime = newTime;
-      
-      // Update our state to match
-      setCurrentTime(newTime);
-      
-      // Update caption based on time (this will happen in the timeupdate handler too)
-      for (let i = sequence.length - 1; i >= 0; i--) {
-        if (newTime >= sequence[i].start) {
-          setCurrentCaption(sequence[i].caption);
-          break;
-        }
-      }
-      
-      // If playing, ensure it continues
-      if (isPlaying) {
-        videoRef.current.play().catch(err => {
-          console.error('Error resuming combined video after progress click:', err);
-        });
-      }
-      
-      return;
-    }
-    
-    // Original segment-based logic for individual videos
-    // Use our total duration, not video duration
-    const newTime = clickPosition * totalDuration;
-    
-    // Get current segment based on new time
-    const { character, index } = getCurrentSegment(newTime);
-    
-    // Update the caption
-    setCurrentCaption(sequence[index].caption);
-    
-    // If we clicked into a different character segment, update the video
-    if (character !== currentVideoSegment) {
-      // Pause current video first
-      if (videoRef.current) {
-        videoRef.current.pause();
-      }
-      
-      // Set new video source
-      setCurrentVideoSrc(videoPaths[character as keyof typeof videoPaths]);
-      setCurrentVideoSegment(character);
-      
-      // Use event listener to ensure video is loaded before playing
-      if (videoRef.current && isPlaying) {
-        const handleVideoLoaded = () => {
-          if (videoRef.current) {
-            // Reset time to beginning
-            videoRef.current.currentTime = 0;
-            
-            // Play the video
-            videoRef.current.play().catch(err => {
-              console.error(`Error playing ${character} video after progress click:`, err);
-            });
-            
-            // Remove event listener
-            videoRef.current.removeEventListener('loadeddata', handleVideoLoaded);
-          }
-        };
-        
-        // Add event listener
-        videoRef.current.addEventListener('loadeddata', handleVideoLoaded);
-      } else if (videoRef.current) {
-        // Not playing, just reset position
-        videoRef.current.currentTime = 0;
-      }
-    } else {
-      // We're in the same character segment, just update the time
-      if (videoRef.current) {
-        // Map our custom timeline to video time within this segment
-        const segmentStart = sequence[index].start;
-        const relativePosition = newTime - segmentStart;
-        videoRef.current.currentTime = relativePosition;
-        
-        // If playing, ensure it continues
-        if (isPlaying) {
-          videoRef.current.play().catch(err => {
-            console.error('Error resuming video after progress click:', err);
-          });
-        }
-      }
-    }
-    
-    // Update the current time
-    setCurrentTime(newTime);
-    
-    // Also handle audio like in skipToSegment
-    const audioRefs = {
-      trump1: trump1AudioRef,
-      zelensky: zelenskyAudioRef,
-      trump2: trump2AudioRef,
-      vance: vanceAudioRef
-    };
-    
-    // Stop all audio first
-    Object.values(audioRefs).forEach(ref => {
-      if (ref?.current) {
-        ref.current.pause();
-        ref.current.currentTime = 0;
-      }
-    });
-    
-    // Start the right audio if not muted and we're playing
-    if (!isMuted && isPlaying) {
-      const audioRef = audioRefs[character as keyof typeof audioRefs];
-      if (audioRef?.current) {
-        audioRef.current.currentTime = 0;
-        audioRef.current.play().catch(err => {
-          console.error(`Error playing ${character} audio after progress click:`, err);
-        });
-      }
-    }
-  };
-  
-  const skipToSegment = (index: number) => {
-    if (!videoRef.current) return;
-    if (index < 0 || index >= sequence.length) return;
-    
-    // Get the segment we're skipping to
-    const segment = sequence[index];
-    const character = segment.character;
-    
-    // Set our custom time to the segment start
-    const newTime = segment.start;
-    setCurrentTime(newTime); 
-    setCurrentCaption(segment.caption);
-    
-    if (videoUrl) {
-      // For combined video, we just need to seek to the right time
-      if (videoRef.current) {
-        // Set the video time directly to the segment start
-        videoRef.current.currentTime = newTime;
-        
-        // If playing, ensure it continues
-        if (isPlaying) {
-          videoRef.current.play().catch(err => {
-            console.error('Error playing combined video after skip:', err);
-          });
-        }
-      }
-      return;
-    }
-    
-    // Original segment-based logic for individual videos
-    // Update the video source if needed
-    if (character !== currentVideoSegment) {
-      // Pause current video first
-      if (videoRef.current) {
-        videoRef.current.pause();
-      }
-      
-      // Set the new video source
-      setCurrentVideoSrc(videoPaths[character as keyof typeof videoPaths]);
-      setCurrentVideoSegment(character);
-      
-      // Use event listener to ensure video is loaded before playing
-      if (videoRef.current && isPlaying) {
-        const handleVideoLoaded = () => {
-          if (videoRef.current) {
-            // Reset time to beginning
-            videoRef.current.currentTime = 0;
-            
-            // Play the video
-            videoRef.current.play().catch(err => {
-              console.error(`Error playing ${character} video after skip:`, err);
-            });
-            
-            // Remove event listener
-            videoRef.current.removeEventListener('loadeddata', handleVideoLoaded);
-          }
-        };
-        
-        // Add event listener
-        videoRef.current.addEventListener('loadeddata', handleVideoLoaded);
-      }
-    } else {
-      // Same video, just reset position
-      if (videoRef.current) {
-        videoRef.current.currentTime = 0;
-        
-        // If we're playing, continue playing
-        if (isPlaying) {
-          videoRef.current.play().catch(err => {
-            console.error('Error playing video after skip:', err);
-          });
-        }
-      }
-    }
-    
-    // Also play appropriate audio
-    const audioRefs = {
-      trump1: trump1AudioRef,
-      zelensky: zelenskyAudioRef,
-      trump2: trump2AudioRef,
-      vance: vanceAudioRef
-    };
-    
-    // Stop all audio first
-    Object.values(audioRefs).forEach(ref => {
-      if (ref?.current) {
-        ref.current.pause();
-        ref.current.currentTime = 0;
-      }
-    });
-    
-    // Start the right audio if not muted
-    if (!isMuted) {
-      const audioRef = audioRefs[character as keyof typeof audioRefs];
-      if (audioRef?.current) {
-        audioRef.current.currentTime = 0;
-        audioRef.current.play().catch(err => {
-          console.error(`Error playing ${character} audio in skip:`, err);
-        });
-      }
-    }
+    if (onPlayPauseToggle) onPlayPauseToggle(!isPlaying);
   };
   
   return (
-    <div
-      ref={containerRef}
-      className="bg-dark rounded-lg overflow-hidden shadow-lg relative"
-      onMouseEnter={() => setShowControls(true)}
-      onMouseLeave={() => setShowControls(isPlaying ? false : true)}
-    >
+    <div className="bg-dark rounded-lg overflow-hidden shadow-lg relative">
       <div className="relative pt-[56.25%]">
-        {/* Video Player */}
-        <video
-          ref={videoRef}
-          src={videoUrl ? videoUrl : currentVideoSrc}
-          className="absolute inset-0 w-full h-full object-cover"
-          onClick={togglePlayPause}
-          playsInline
-          crossOrigin="anonymous"
-          muted={videoUrl ? false : isMuted} // Only mute if we're using individual videos
-          preload="auto"
-          onError={(e) => {
-            console.error('Video load error:', e);
-            
-            // If combined video fails to load, fall back to individual videos
-            if (videoUrl && videoRef.current) {
-              console.log('Falling back to individual video segments due to error with URL:', videoUrl);
-              
-              // Set a flag to indicate we're in fallback mode
-              const useFallback = true;
-              
-              // Update video source to first segment
-              videoRef.current.src = videoPaths.trump1;
-              setCurrentVideoSrc(videoPaths.trump1);
-              setCurrentVideoSegment('trump1');
-              
-              // Make sure video is muted for individual segments
-              videoRef.current.muted = isMuted;
-              
-              // Add event listener to handle video loading
-              const handleFallbackVideoLoaded = () => {
-                if (videoRef.current) {
-                  // Reset time to beginning
-                  videoRef.current.currentTime = 0;
-                  
-                  // Restart appropriate audio for first segment
-                  if (!isMuted && trump1AudioRef.current) {
-                    trump1AudioRef.current.currentTime = 0;
-                    trump1AudioRef.current.play().catch(e => {
-                      console.error('Error playing trump1 audio in fallback:', e);
-                    });
-                  }
-                  
-                  // Remove event listener
-                  videoRef.current.removeEventListener('loadeddata', handleFallbackVideoLoaded);
-                  
-                  // Resume playback if needed
-                  if (isPlaying) {
-                    videoRef.current.play().catch(e => {
-                      console.error('Error playing trump1 video in fallback:', e);
-                    });
-                  }
-                }
-              };
-              
-              // Add event listener
-              videoRef.current.addEventListener('loadeddata', handleFallbackVideoLoaded);
-              
-              // Load the video to trigger the loadeddata event
-              videoRef.current.load();
-            }
-          }}
-        />
-        
-        {/* Play button overlay (visible when paused) */}
-        {!isPlaying && (
-          <div className="absolute inset-0 flex items-center justify-center bg-black bg-opacity-30 z-10">
-            <button
-              className="w-20 h-20 bg-primary rounded-full flex items-center justify-center shadow-lg hover:bg-yellow-400 transition-colors"
-              onClick={togglePlayPause}
-              aria-label="Play video"
-            >
-              <svg
-                xmlns="http://www.w3.org/2000/svg"
-                fill="none"
-                viewBox="0 0 24 24"
-                strokeWidth="1.5"
-                stroke="currentColor"
-                className="w-12 h-12 text-dark"
-              >
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  d="M5.25 5.653c0-.856.917-1.398 1.667-.986l11.54 6.348a1.125 1.125 0 010 1.971l-11.54 6.347a1.125 1.125 0 01-1.667-.985V5.653z"
-                />
-              </svg>
-            </button>
+        {/* Loading state */}
+        {isLoading && (
+          <div className="absolute inset-0 flex items-center justify-center bg-black z-30">
+            <div className="flex flex-col items-center">
+              <div className="w-16 h-16 border-4 border-primary border-t-transparent rounded-full animate-spin"></div>
+              <p className="text-white mt-4">Loading segment...</p>
+            </div>
           </div>
         )}
         
-        {/* Video controls */}
-        <div
-          className={`absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/80 to-transparent p-4 transition-opacity z-20 ${showControls ? 'opacity-100' : 'opacity-0'}`}
-        >
-          <div className="flex items-center justify-between text-white mb-2">
-            <div className="flex items-center gap-2">
-              <button
-                className="hover:text-primary transition-colors"
-                onClick={togglePlayPause}
-                aria-label={isPlaying ? "Pause" : "Play"}
-              >
-                {isPlaying ? (
-                  <svg
-                    xmlns="http://www.w3.org/2000/svg"
-                    fill="none"
-                    viewBox="0 0 24 24"
-                    strokeWidth="1.5"
-                    stroke="currentColor"
-                    className="w-6 h-6"
-                  >
-                    <path
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      d="M15.75 5.25v13.5m-7.5-13.5v13.5"
-                    />
-                  </svg>
-                ) : (
-                  <svg
-                    xmlns="http://www.w3.org/2000/svg"
-                    fill="none"
-                    viewBox="0 0 24 24"
-                    strokeWidth="1.5"
-                    stroke="currentColor"
-                    className="w-6 h-6"
-                  >
-                    <path
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      d="M5.25 5.653c0-.856.917-1.398 1.667-.986l11.54 6.348a1.125 1.125 0 010 1.971l-11.54 6.347a1.125 1.125 0 01-1.667-.985V5.653z"
-                    />
-                  </svg>
-                )}
-              </button>
-              <span className="text-sm">{formatTime(currentTime)} / {formatTime(duration)}</span>
-            </div>
-            <div className="flex items-center gap-2">
-              <div className="flex items-center space-x-1">
-                {sequence.map((segment, index) => (
-                  <div
-                    key={segment.character}
-                    className={`w-6 h-1 rounded-full cursor-pointer ${
-                      currentCaption === segment.caption ? 'bg-primary' : 'bg-white/30'
-                    }`}
-                    onClick={() => skipToSegment(index)}
-                  ></div>
-                ))}
-              </div>
-              <button
-                className="hover:text-primary transition-colors"
-                onClick={toggleMute}
-                aria-label={isMuted ? "Unmute" : "Mute"}
-              >
-                {isMuted ? (
-                  <svg
-                    xmlns="http://www.w3.org/2000/svg"
-                    fill="none"
-                    viewBox="0 0 24 24"
-                    strokeWidth="1.5"
-                    stroke="currentColor"
-                    className="w-6 h-6"
-                  >
-                    <path
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      d="M17.25 9.75L19.5 12m0 0l2.25 2.25M19.5 12l2.25-2.25M19.5 12l-2.25 2.25m-10.5-6l4.72-4.72a.75.75 0 011.28.531V19.94a.75.75 0 01-1.28.53l-4.72-4.72H4.51c-.88 0-1.704-.506-1.938-1.354A9.01 9.01 0 012.25 12c0-.83.112-1.633.322-2.395C2.806 8.757 3.63 8.25 4.51 8.25H6.75z"
-                    />
-                  </svg>
-                ) : (
-                  <svg
-                    xmlns="http://www.w3.org/2000/svg"
-                    fill="none"
-                    viewBox="0 0 24 24"
-                    strokeWidth="1.5"
-                    stroke="currentColor"
-                    className="w-6 h-6"
-                  >
-                    <path
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      d="M19.114 5.636a9 9 0 010 12.728M16.463 8.288a5.25 5.25 0 010 7.424M6.75 8.25l4.72-4.72a.75.75 0 011.28.53v15.88a.75.75 0 01-1.28.53l-4.72-4.72H4.51c-.88 0-1.704-.507-1.938-1.354A9.01 9.01 0 012.25 12c0-.83.112-1.633.322-2.396C2.806 8.756 3.63 8.25 4.51 8.25H6.75z"
-                    />
-                  </svg>
-                )}
-              </button>
-            </div>
-          </div>
-          
-          {/* Progress bar */}
-          <div
-            className="h-1 bg-white/30 rounded-full overflow-hidden cursor-pointer"
-            onClick={handleProgressClick}
-          >
-            <div
-              className="h-full bg-primary rounded-full"
-              style={{ width: `${progress}%` }}
-            ></div>
-          </div>
-          
-          {/* Caption */}
-          <div className="mt-3 text-center">
-            <p className="text-white font-medium text-lg">{currentCaption}</p>
-          </div>
-        </div>
+        {/* Video element */}
+        <video
+          ref={videoRef}
+          src={videoSrc}
+          className="absolute inset-0 w-full h-full object-cover"
+          preload="auto"
+          playsInline
+          style={{ opacity: isLoading ? 0 : 1 }}
+        />
         
-        {/* Hidden audio players for each character */}
+        {/* Audio element (hidden) */}
         <audio 
-          ref={trump1AudioRef}
-          src={audioSources.trump1}
-          preload="auto"
-          muted={isMuted}
-          style={{ display: 'none' }}
-          onError={(e) => console.error('Trump1 audio load error:', e)}
+          src={audioSrc} 
+          style={{ display: 'none' }} 
         />
-        <audio 
-          ref={zelenskyAudioRef}
-          src={audioSources.zelensky}
-          preload="auto"
-          muted={isMuted}
-          style={{ display: 'none' }}
-          onError={(e) => console.error('Zelensky audio load error:', e)}
-        />
-        <audio 
-          ref={trump2AudioRef}
-          src={audioSources.trump2}
-          preload="auto"
-          muted={isMuted}
-          style={{ display: 'none' }}
-          onError={(e) => console.error('Trump2 audio load error:', e)}
-        />
-        <audio 
-          ref={vanceAudioRef}
-          src={audioSources.vance}
-          preload="auto"
-          muted={isMuted}
-          style={{ display: 'none' }}
-          onError={(e) => console.error('Vance audio load error:', e)}
-        />
+        
+        {/* Play/pause button */}
+        {!isLoading && (
+          <div 
+            className={`absolute inset-0 flex items-center justify-center z-10 ${isPlaying ? 'bg-transparent' : 'bg-black bg-opacity-30'}`}
+            onClick={handlePlayPauseClick}
+          >
+            {!isPlaying && (
+              <button
+                className="w-20 h-20 bg-primary rounded-full flex items-center justify-center shadow-lg hover:bg-yellow-400 transition-colors"
+                aria-label="Play video"
+              >
+                <svg
+                  xmlns="http://www.w3.org/2000/svg"
+                  fill="none"
+                  viewBox="0 0 24 24"
+                  strokeWidth="1.5"
+                  stroke="currentColor"
+                  className="w-12 h-12 text-dark"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    d="M5.25 5.653c0-.856.917-1.398 1.667-.986l11.54 6.348a1.125 1.125 0 010 1.971l-11.54 6.347a1.125 1.125 0 01-1.667-.985V5.653z"
+                  />
+                </svg>
+              </button>
+            )}
+          </div>
+        )}
+        
+        {/* Caption */}
+        <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/80 to-transparent p-4 z-20">
+          <p className="text-white font-medium text-lg text-center">
+            {script[currentSegment]}
+          </p>
+        </div>
       </div>
     </div>
   );

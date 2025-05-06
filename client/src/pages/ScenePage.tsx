@@ -11,6 +11,7 @@ import SimpleSequencePlayer from "@/components/SimpleSequencePlayer";
 import FixedSequencePlayer from "@/components/FixedSequencePlayer";
 import BasicSequencePlayer from "@/components/BasicSequencePlayer";
 import UltraSimplePlayer from "@/components/UltraSimplePlayer";
+import SuperSimplePlayer from "@/components/SuperSimplePlayer";
 import DebugPlayer from "@/components/DebugPlayer";
 import SharePanel from "@/components/SharePanel";
 import RemixDetails from "@/components/RemixDetails";
@@ -89,10 +90,10 @@ const ScenePage = () => {
           <div className="lg:w-7/12">
             {remix.clipInfo ? (
               <>
-                <div className="bg-purple-100 p-2 mb-2 text-sm rounded-md">
-                  Using UltraSimplePlayer (high isolation, no race conditions, true async/await)
+                <div className="bg-green-100 p-2 mb-2 text-sm rounded-md">
+                  Using SuperSimplePlayer (minimalist approach, pure native video element)
                 </div>
-                <UltraSimplePlayer
+                <SuperSimplePlayer
                   clipInfo={remix.clipInfo}
                   script={remix.script}
                   onPlayPauseToggle={handlePlayPauseToggle}
@@ -107,7 +108,7 @@ const ScenePage = () => {
                         clipInfo={remix.clipInfo}
                         script={remix.script}
                         onPlayPauseToggle={() => {}}
-                        videoUrl={remix.videoUrl}
+                        autoPlay={false}
                       />
                     </div>
                   </details>
