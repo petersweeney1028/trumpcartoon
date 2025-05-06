@@ -35,19 +35,33 @@ const UltraSimplePlayer: React.FC<UltraSimplePlayerProps> = ({
   const audioRef = useRef<HTMLAudioElement>(null);
   const autoplayTriggerRef = useRef<HTMLButtonElement>(null);
   
-  // Autoplay hack: Simulate user interaction when component mounts
+  // Set user interaction to true immediately on component mount
+  // This is a better solution than trying to simulate clicks
   useEffect(() => {
-    console.log('Attempting autoplay workaround...');
+    console.log('Component mounted - marking user as having interacted');
+    // Instead of trying to click the button, just set the flag directly
+    setHasUserInteracted(true);
     
-    // Short timeout to ensure DOM is ready
-    const timeoutId = setTimeout(() => {
-      if (autoplayTriggerRef.current) {
-        console.log('Triggering synthetic click for autoplay');
-        autoplayTriggerRef.current.click();
+    // Cleanup function for component unmount - prevents memory leaks
+    return () => {
+      console.log('Component unmounting - cleaning up media');
+      
+      // Stop any playing media to prevent audio leakage between components
+      const video = videoRef.current;
+      const audio = audioRef.current;
+      
+      if (video) {
+        video.pause();
+        video.src = '';
+        video.load();
       }
-    }, 100);
-    
-    return () => clearTimeout(timeoutId);
+      
+      if (audio) {
+        audio.pause();
+        audio.src = '';
+        audio.load();
+      }
+    };
   }, []);
   
   // Segment order
@@ -115,21 +129,49 @@ const UltraSimplePlayer: React.FC<UltraSimplePlayerProps> = ({
     
     if (!video || !audio) return;
     
+    // Reset loaded count when component mounts or segment changes
+    setLoadedCount(0);
+    
+    // Create one-time handlers to avoid duplicate events
     const handleVideoLoaded = () => {
       console.log(`Video loaded for ${currentSegment}`);
-      setLoadedCount(prev => prev + 1);
+      // Using function form to prevent race conditions with multiple events
+      setLoadedCount(prev => {
+        // Only increment if we haven't already counted this load
+        if (prev < 2) return prev + 1;
+        return prev;
+      });
+      // Remove the listener after it fires once
+      video.removeEventListener('loadeddata', handleVideoLoaded);
     };
     
     const handleAudioLoaded = () => {
       console.log(`Audio loaded for ${currentSegment}`);
-      setLoadedCount(prev => prev + 1);
+      // Using function form to prevent race conditions with multiple events
+      setLoadedCount(prev => {
+        // Only increment if we haven't already counted this load
+        if (prev < 2) return prev + 1;
+        return prev;
+      });
+      // Remove the listener after it fires once
+      audio.removeEventListener('loadeddata', handleAudioLoaded);
     };
     
     // Listen for loaded events
     video.addEventListener('loadeddata', handleVideoLoaded);
     audio.addEventListener('loadeddata', handleAudioLoaded);
     
+    // Also check if they're already loaded
+    if (video.readyState >= 3) {
+      handleVideoLoaded();
+    }
+    
+    if (audio.readyState >= 3) {
+      handleAudioLoaded();
+    }
+    
     return () => {
+      // Clean up in case they didn't fire
       video.removeEventListener('loadeddata', handleVideoLoaded);
       audio.removeEventListener('loadeddata', handleAudioLoaded);
     };
@@ -137,16 +179,34 @@ const UltraSimplePlayer: React.FC<UltraSimplePlayerProps> = ({
   
   // Determine when both media are loaded and autoplay
   useEffect(() => {
+    // Only auto-start if we've loaded both media files
     if (loadedCount >= 2) {
       console.log(`Both video and audio loaded for ${currentSegment}`);
       setIsLoading(false);
       
-      // Auto-start playback once media is loaded
-      // Note: This should be combined with the "click hack" below
+      // For autoplaying subsequent segments after the first one started
+      // we need to explicitly restart playback since isPlaying will remain true
+      // during transitions
+      
+      // For first segment autoplay or when player was paused 
       if (!isPlaying) {
-        console.log('Auto-starting playback after media loaded');
+        console.log('Auto-starting playback after media loaded (new play state)');
         setHasUserInteracted(true); // Simulate user interaction
         setIsPlaying(true); // Start playback
+      } 
+      // For subsequent segments when already playing
+      else {
+        console.log('Auto-resuming playback after segment change (maintaining play state)');
+        // Force re-trigger playback by toggling state - works around issue where
+        // some browsers won't restart media even when sources change
+        setIsPlaying(false);
+        // Allow a brief moment for the state update to process
+        setTimeout(() => {
+          if (videoRef.current && audioRef.current) {
+            console.log('Restarting media elements after brief delay');
+            setIsPlaying(true);
+          }
+        }, 50);
       }
     }
   }, [loadedCount, currentSegment, isPlaying]);
@@ -157,7 +217,13 @@ const UltraSimplePlayer: React.FC<UltraSimplePlayerProps> = ({
     const video = videoRef.current;
     if (!audio || !video) return;
     
+    let endedHandlerCalled = false; // Flag to prevent duplicate calls
+    
     const handleAudioEnded = () => {
+      // Prevent duplicate calls by checking the flag
+      if (endedHandlerCalled) return;
+      endedHandlerCalled = true;
+      
       console.log(`Audio for ${currentSegment} ended`);
       
       // Find next segment index
@@ -171,8 +237,17 @@ const UltraSimplePlayer: React.FC<UltraSimplePlayerProps> = ({
         video.pause();
         audio.pause();
         
+        // Keep the flag marked that we're playing
+        // This will be used by the loadedCount effect to auto-resume
+        // the next segment once it loads
+        
         // Update segment - this will trigger media loading for next segment
         setCurrentSegment(nextSegment);
+        
+        // Reset flag after a brief delay to prevent race conditions
+        setTimeout(() => {
+          endedHandlerCalled = false;
+        }, 100);
       } else {
         // End of sequence
         console.log('End of sequence reached');
