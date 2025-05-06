@@ -48,6 +48,14 @@ const SuperSimplePlayer: React.FC<SuperSimplePlayerProps> = ({
     currentSegment === 'trump2' ? `/static${clipInfo.trump2Audio}` :
     `/static${clipInfo.vanceAudio}`;
   
+  // Object to track loaded media by segment name
+  const [loadedSegments, setLoadedSegments] = useState<Record<CharacterSegment, boolean>>({
+    trump1: false,
+    zelensky: false,
+    trump2: false,
+    vance: false
+  });
+  
   // Reset loading state when segment changes
   useEffect(() => {
     setIsLoading(true);
@@ -69,7 +77,80 @@ const SuperSimplePlayer: React.FC<SuperSimplePlayerProps> = ({
     }
   }, [currentSegment, videoSrc, audioSrc]);
   
-  // Handle media loading events
+  // Preload all segment media
+  useEffect(() => {
+    // One-time setup to preload all media files
+    const preloadAllSegments = async () => {
+      const preloadMedia = (segmentName: CharacterSegment) => {
+        return new Promise<void>((resolve) => {
+          const segVideo = document.createElement('video');
+          const segAudio = document.createElement('audio');
+          
+          // Get correct paths for this segment
+          const vSrc = segmentName === 'trump1' ? `/static${clipInfo.trump1Video}` :
+                      segmentName === 'zelensky' ? `/static${clipInfo.zelenskyVideo}` :
+                      segmentName === 'trump2' ? `/static${clipInfo.trump2Video}` :
+                      `/static${clipInfo.vanceVideo}`;
+          
+          const aSrc = segmentName === 'trump1' ? `/static${clipInfo.trump1Audio}` :
+                      segmentName === 'zelensky' ? `/static${clipInfo.zelenskyAudio}` :
+                      segmentName === 'trump2' ? `/static${clipInfo.trump2Audio}` :
+                      `/static${clipInfo.vanceAudio}`;
+          
+          // Set sources
+          segVideo.src = vSrc;
+          segAudio.src = aSrc;
+          
+          // Add event listeners
+          let videoLoaded = false;
+          let audioLoaded = false;
+          
+          const checkAllLoaded = () => {
+            if (videoLoaded && audioLoaded) {
+              console.log(`Preloaded segment: ${segmentName}`);
+              setLoadedSegments(prev => ({...prev, [segmentName]: true}));
+              resolve();
+            }
+          };
+          
+          segVideo.addEventListener('canplaythrough', () => {
+            videoLoaded = true;
+            checkAllLoaded();
+          });
+          
+          segAudio.addEventListener('canplaythrough', () => {
+            audioLoaded = true;
+            checkAllLoaded();
+          });
+          
+          // Start loading
+          segVideo.load();
+          segAudio.load();
+          
+          // Set timeout to resolve anyway after 5 seconds to prevent hanging
+          setTimeout(() => {
+            if (!videoLoaded || !audioLoaded) {
+              console.warn(`Timeout preloading ${segmentName}, continuing anyway`);
+              setLoadedSegments(prev => ({...prev, [segmentName]: true}));
+              resolve();
+            }
+          }, 5000);
+        });
+      };
+      
+      // Preload all segments in parallel
+      try {
+        await Promise.all(segments.map(segment => preloadMedia(segment)));
+        console.log("All segments preloaded");
+      } catch (error) {
+        console.error("Error preloading segments:", error);
+      }
+    };
+    
+    preloadAllSegments();
+  }, [clipInfo]); // Only run once on component mount
+  
+  // Handle media loading events for current segment
   useEffect(() => {
     const video = videoRef.current;
     const audio = audioRef.current;
@@ -90,6 +171,10 @@ const SuperSimplePlayer: React.FC<SuperSimplePlayerProps> = ({
     video.addEventListener('canplay', handleVideoCanPlay);
     audio.addEventListener('canplay', handleAudioCanPlay);
     
+    // Check if already loaded
+    if (video.readyState >= 3) handleVideoCanPlay();
+    if (audio.readyState >= 3) handleAudioCanPlay();
+    
     return () => {
       // Clean up event listeners
       video.removeEventListener('canplay', handleVideoCanPlay);
@@ -103,20 +188,27 @@ const SuperSimplePlayer: React.FC<SuperSimplePlayerProps> = ({
       console.log(`Both video and audio for ${currentSegment} are ready`);
       setIsLoading(false);
       
-      // Auto-play when media is loaded for the first time
-      if (!isPlaying) {
-        startPlayback();
-      }
+      // Auto-play when media is loaded
+      startPlayback();
     }
   }, [loadedMedia, currentSegment]);
   
-  // Handle audio ended to go to next segment
+  // Handle media ended to go to next segment - use BOTH audio and video ended for redundancy
   useEffect(() => {
     const audio = audioRef.current;
-    if (!audio) return;
+    const video = videoRef.current;
     
-    const handleAudioEnded = () => {
-      console.log(`Audio for ${currentSegment} ended`);
+    if (!audio || !video) return;
+    
+    // Flag to track if we've already moved to the next segment (prevent double transitions)
+    let transitionInProgress = false;
+    
+    const moveToNextSegment = () => {
+      // Prevent double transitions
+      if (transitionInProgress) return;
+      transitionInProgress = true;
+      
+      console.log(`Media for ${currentSegment} ended`);
       
       // Find the index of current segment
       const currentIndex = segments.indexOf(currentSegment);
@@ -125,7 +217,28 @@ const SuperSimplePlayer: React.FC<SuperSimplePlayerProps> = ({
       if (currentIndex >= 0 && currentIndex < segments.length - 1) {
         const nextSegment = segments[currentIndex + 1];
         console.log(`Moving to next segment: ${nextSegment}`);
-        setCurrentSegment(nextSegment);
+        
+        // Verify the segment is preloaded before transitioning
+        if (loadedSegments[nextSegment]) {
+          setCurrentSegment(nextSegment);
+        } else {
+          console.log(`Waiting for ${nextSegment} to preload...`);
+          
+          // Set a timeout in case preloading is taking too long
+          const timeoutId = setTimeout(() => {
+            console.log(`Timeout waiting for ${nextSegment} preload, moving anyway`);
+            setCurrentSegment(nextSegment);
+          }, 1000);
+          
+          // Wait for preload to complete
+          const checkPreloadInterval = setInterval(() => {
+            if (loadedSegments[nextSegment]) {
+              clearTimeout(timeoutId);
+              clearInterval(checkPreloadInterval);
+              setCurrentSegment(nextSegment);
+            }
+          }, 100);
+        }
       } else {
         // End of sequence
         console.log('End of sequence reached');
@@ -134,15 +247,50 @@ const SuperSimplePlayer: React.FC<SuperSimplePlayerProps> = ({
       }
     };
     
-    // Set up event listener
+    // Set up event listeners for both audio and video (for redundancy)
+    const handleAudioEnded = () => {
+      console.log(`Audio for ${currentSegment} ended`);
+      moveToNextSegment();
+    };
+    
+    const handleVideoEnded = () => {
+      console.log(`Video for ${currentSegment} ended`);
+      
+      // Only use video ending as trigger if audio hasn't already ended
+      // This redundancy helps with segments where audio might not play properly
+      if (!audio.ended) {
+        console.warn(`Audio didn't end but video did for ${currentSegment} - using video end as trigger`);
+        moveToNextSegment();
+      }
+    };
+    
+    // Set up event listeners for both
     audio.addEventListener('ended', handleAudioEnded);
+    video.addEventListener('ended', handleVideoEnded);
+    
+    // Also set up a timeout as last-resort fallback (in case both ended events don't fire)
+    const safetyTimeout = setTimeout(() => {
+      // Check if neither has reported ending but both should be done
+      if (!audio.ended && !video.ended && !audio.paused && !video.paused) {
+        // Calculate if we've gone past the expected duration
+        const expectedDuration = audio.duration || video.duration || 0;
+        const currentTime = audio.currentTime || video.currentTime || 0;
+        
+        if (expectedDuration > 0 && currentTime >= expectedDuration - 0.5) {
+          console.warn(`Timeout triggered transition for ${currentSegment}`);
+          moveToNextSegment();
+        }
+      }
+    }, 15000); // 15 seconds as max segment length safety
     
     return () => {
       audio.removeEventListener('ended', handleAudioEnded);
+      video.removeEventListener('ended', handleVideoEnded);
+      clearTimeout(safetyTimeout);
     };
-  }, [currentSegment, segments, onPlayPauseToggle]);
+  }, [currentSegment, segments, onPlayPauseToggle, loadedSegments]);
   
-  // Start playback of both video and audio
+  // Start playback of both video and audio with fallback mechanisms
   const startPlayback = async () => {
     const video = videoRef.current;
     const audio = audioRef.current;
@@ -156,33 +304,89 @@ const SuperSimplePlayer: React.FC<SuperSimplePlayerProps> = ({
       video.currentTime = 0;
       audio.currentTime = 0;
       
-      // Start video first (it has no audio, so no autoplay restrictions)
-      const videoPromise = video.play();
+      // Set up automatic retry for problematic segments (particularly Vance)
+      let retryCount = 0;
+      const maxRetries = 3;
       
-      // Then start audio
-      let audioStarted = false;
-      
-      if (videoPromise !== undefined) {
-        await videoPromise;
-        
-        // Now that video has started, start audio
+      // Wrap play attempts in a function to enable retrying
+      const attemptPlayback = async (): Promise<boolean> => {
         try {
-          await audio.play();
-          audioStarted = true;
-          console.log(`Audio for ${currentSegment} started`);
-        } catch (audioErr) {
-          console.error("Failed to start audio:", audioErr);
+          // Create a promise that resolves when the media is playing or rejects on error
+          const videoPlayPromise = video.play();
+          
+          // Start audio right after video (no need to await video - they should start together)
+          const audioPlayPromise = audio.play();
+          
+          // Wait for both to start
+          await Promise.all([videoPlayPromise, audioPlayPromise]);
+          
+          console.log(`Both video and audio for ${currentSegment} started successfully`);
+          return true;
+        } catch (err) {
+          console.warn(`Attempt ${retryCount + 1} failed for ${currentSegment}:`, err);
+          
+          // Special handling for autoplay restrictions
+          if (err instanceof DOMException && err.name === "NotAllowedError") {
+            console.warn("Autoplay prevented by browser policy. Trying muted playback first...");
+            
+            try {
+              // First ensure video is muted (should be already, but just in case)
+              video.muted = true;
+              
+              // Try to play video first
+              await video.play();
+              
+              // Then unmute and play audio
+              try {
+                await audio.play();
+                console.log("Successfully started playback after autoplay workaround");
+                return true;
+              } catch (audioErr) {
+                console.error("Audio still failed after video started:", audioErr);
+                return false;
+              }
+            } catch (muteErr) {
+              console.error("Even muted video playback failed:", muteErr);
+              return false;
+            }
+          }
+          
+          // For other errors, retry if we haven't reached max retries
+          if (retryCount < maxRetries) {
+            retryCount++;
+            console.log(`Retrying playback attempt ${retryCount}/${maxRetries}`);
+            
+            // Small delay before retry
+            await new Promise(resolve => setTimeout(resolve, 300));
+            return await attemptPlayback();
+          }
+          
+          return false;
         }
-      }
+      };
       
-      if (audioStarted) {
+      // Attempt playback with retry support
+      const playbackSucceeded = await attemptPlayback();
+      
+      if (playbackSucceeded) {
+        // Successfully playing both video and audio
         setIsPlaying(true);
         if (onPlayPauseToggle) onPlayPauseToggle(true);
       } else {
-        throw new Error("Could not start audio playback");
+        console.error(`Failed to play ${currentSegment} after ${maxRetries} attempts`);
+        
+        // Try to continue to next segment if we're having problems with the current one
+        if (currentSegment !== segments[segments.length - 1]) {
+          console.log("Skipping problematic segment");
+          const currentIndex = segments.indexOf(currentSegment);
+          const nextSegment = segments[currentIndex + 1];
+          setCurrentSegment(nextSegment);
+        } else {
+          pausePlayback();
+        }
       }
     } catch (err) {
-      console.error("Error starting media playback:", err);
+      console.error("Unexpected error in playback:", err);
       pausePlayback();
     }
   };
