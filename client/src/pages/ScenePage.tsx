@@ -13,6 +13,7 @@ import BasicSequencePlayer from "@/components/BasicSequencePlayer";
 import UltraSimplePlayer from "@/components/UltraSimplePlayer";
 import SuperSimplePlayer from "@/components/SuperSimplePlayer";
 import MinimalPlayer from "@/components/MinimalPlayer";
+import SuperBasicPlayer from "@/components/SuperBasicPlayer";
 import DebugPlayer from "@/components/DebugPlayer";
 import SharePanel from "@/components/SharePanel";
 import RemixDetails from "@/components/RemixDetails";
@@ -92,9 +93,9 @@ const ScenePage = () => {
             {remix.clipInfo ? (
               <>
                 <div className="bg-blue-100 p-2 mb-2 text-sm rounded-md">
-                  Using MinimalPlayer (back to basics approach, ultra-lightweight)
+                  Using SuperBasicPlayer (back to basics approach, ultra-lightweight)
                 </div>
-                <MinimalPlayer
+                <SuperBasicPlayer
                   clipInfo={remix.clipInfo}
                   script={remix.script}
                   onPlayPauseToggle={handlePlayPauseToggle}

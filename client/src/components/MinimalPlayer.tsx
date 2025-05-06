@@ -14,15 +14,6 @@ interface MinimalPlayerProps {
 
 type CharacterSegment = 'trump1' | 'zelensky' | 'trump2' | 'vance';
 
-// Browser restrictions often require a user interaction before media can autoplay
-// This flag helps us track whether the user has interacted with the page
-let userHasInteracted = false;
-
-// Listen for any user interaction at the document level
-document.addEventListener('click', () => {
-  userHasInteracted = true;
-}, { once: true });
-
 /**
  * MinimalPlayer - The absolute simplest implementation possible
  * Uses only video element with direct attributes and minimal JavaScript
