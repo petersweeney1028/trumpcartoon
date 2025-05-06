@@ -20,10 +20,21 @@ const SuperBasicPlayer: React.FC<SuperBasicPlayerProps> = ({
   script,
   onPlayPauseToggle
 }) => {
+  // Check if the user has already interacted with the page
+  // This will help with autoplay restrictions
+  const hasUserInteracted = () => {
+    try {
+      return !!sessionStorage.getItem('userHasInteracted');
+    } catch (e) {
+      return false;
+    }
+  };
+
   // Track only the current scene and playing state
   const [currentScene, setCurrentScene] = useState<number>(0);
   const [isPlaying, setIsPlaying] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
+  const [userInteracted, setUserInteracted] = useState(hasUserInteracted());
   
   // References to media elements 
   const videoRef = useRef<HTMLVideoElement>(null);
@@ -110,10 +121,16 @@ const SuperBasicPlayer: React.FC<SuperBasicPlayerProps> = ({
         setIsLoading(false);
         console.log(`Both video and audio ready for scene ${currentScene}`);
         
-        // Auto-play if not the first scene or if already playing
-        if (currentScene > 0 || isPlaying) {
-          console.log(`Auto-playing scene ${currentScene}`);
-          playMedia();
+        // Auto-play if:
+        // 1. Not the first scene (transitioning between scenes) OR
+        // 2. Already playing OR
+        // 3. User has already interacted with the page
+        if (currentScene > 0 || isPlaying || userInteracted) {
+          // Add a slight delay to ensure browser is ready for playback
+          setTimeout(() => {
+            console.log(`Auto-playing scene ${currentScene} (userInteracted: ${userInteracted})`);
+            playMedia();
+          }, 100);
         }
       }
     };
@@ -122,12 +139,14 @@ const SuperBasicPlayer: React.FC<SuperBasicPlayerProps> = ({
     const handleVideoCanPlay = () => {
       console.log(`Video ready for scene ${currentScene}`);
       videoReady = true;
+      video.currentTime = 0; // Reset position to beginning
       checkBothReady();
     };
     
     const handleAudioCanPlay = () => {
       console.log(`Audio ready for scene ${currentScene}`);
       audioReady = true;
+      audio.currentTime = 0; // Reset position to beginning
       checkBothReady();
     };
     
@@ -178,7 +197,7 @@ const SuperBasicPlayer: React.FC<SuperBasicPlayerProps> = ({
       
       clearTimeout(timeoutId);
     };
-  }, [currentScene, scenes, isPlaying, onPlayPauseToggle]);
+  }, [currentScene, scenes, isPlaying, onPlayPauseToggle, userInteracted]);
   
   // Function to play both media in sync
   const playMedia = async () => {
@@ -199,19 +218,40 @@ const SuperBasicPlayer: React.FC<SuperBasicPlayerProps> = ({
         return;
       }
       
-      // Reset to beginning
+      // Reset to beginning and make sure current time is explicitly 0
       video.currentTime = 0;
       audio.currentTime = 0;
       
+      // First try to play both media 
       console.log("Playing video:", video.src);
-      // Play video first (muted, so no autoplay restrictions)
-      await video.play();
+      let videoPromise = video.play();
       
       console.log("Playing audio:", audio.src);
-      // Then play audio
-      await audio.play();
+      let audioPromise;
       
-      // Update state
+      // Try to start audio playback right away to minimize any delay
+      audioPromise = audio.play();
+      
+      // Wait for both play promises to resolve
+      try {
+        await videoPromise;
+        console.log("Video playback started successfully");
+      } catch (videoError) {
+        console.error("Video playback failed:", videoError);
+        // If video fails, we need to handle autoplay restrictions
+        throw videoError;
+      }
+      
+      try {
+        await audioPromise;
+        console.log("Audio playback started successfully");
+      } catch (audioError) {
+        console.error("Audio playback failed:", audioError);
+        // If first attempt fails due to autoplay restrictions, try again after user interaction
+        throw audioError;
+      }
+      
+      // Update state once both are playing
       console.log("Both media playing successfully");
       setIsPlaying(true);
       if (onPlayPauseToggle) onPlayPauseToggle(true);
@@ -219,7 +259,30 @@ const SuperBasicPlayer: React.FC<SuperBasicPlayerProps> = ({
     } catch (error) {
       console.error('Error playing media:', error);
       
-      // Try to get specific error details
+      // Check if this is an autoplay restriction error (DOMException with name AbortError)
+      const isAutoplayError = error && 
+        error instanceof DOMException && 
+        (error.name === 'AbortError' || error.name === 'NotAllowedError');
+      
+      if (isAutoplayError) {
+        console.warn("Detected autoplay restriction. User interaction required.");
+        // Don't show error - just show play button for user to click
+        setIsPlaying(false);
+        setIsLoading(false);
+        
+        // Make sure both are paused
+        try {
+          video.pause();
+          audio.pause();
+        } catch (e) {
+          // Ignore errors on pause
+        }
+        
+        if (onPlayPauseToggle) onPlayPauseToggle(false);
+        return;
+      }
+      
+      // For other errors, show error details
       let errorDetails = "";
       
       if (video.error) {
@@ -259,6 +322,23 @@ const SuperBasicPlayer: React.FC<SuperBasicPlayerProps> = ({
       setIsPlaying(false);
       if (onPlayPauseToggle) onPlayPauseToggle(false);
     } else {
+      // Update our interaction state
+      setUserInteracted(true);
+      
+      // Store a flag in sessionStorage to remember user has clicked
+      try {
+        sessionStorage.setItem('userHasInteracted', 'true');
+      } catch (e) {
+        // Ignore storage errors
+      }
+      
+      // Ensure timeouts are cleared so we can start fresh
+      setIsLoading(false);
+      
+      // Reset positions again for good measure
+      video.currentTime = 0;
+      audio.currentTime = 0;
+      
       // Start playback
       playMedia();
     }
