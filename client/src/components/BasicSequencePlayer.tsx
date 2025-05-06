@@ -80,6 +80,7 @@ const BasicSequencePlayer: React.FC<BasicSequencePlayerProps> = ({
     
     const checkLoaded = () => {
       if (videoLoaded && audioLoaded) {
+        console.log(`Both video and audio loaded for ${currentSegment}`);
         setIsLoading(false);
       }
     };
@@ -108,11 +109,22 @@ const BasicSequencePlayer: React.FC<BasicSequencePlayerProps> = ({
       const next = nextSegment[currentSegment];
       
       if (next) {
-        setCurrentSegment(next);
+        console.log(`Moving to next segment: ${next}`);
+        
+        // Pause current video and audio
+        video.pause();
+        audio.pause();
+        
+        // Mark as loading
         setIsLoading(true);
+        
+        // Switch to next segment
+        setCurrentSegment(next);
       } else {
         // End of sequence
-        console.log("End of sequence");
+        console.log("End of sequence reached");
+        video.pause();
+        audio.pause();
         setIsPlaying(false);
         if (onPlayPauseToggle) onPlayPauseToggle(false);
       }
@@ -126,7 +138,7 @@ const BasicSequencePlayer: React.FC<BasicSequencePlayerProps> = ({
       audio.removeEventListener('loadeddata', onAudioLoaded);
       audio.removeEventListener('ended', onAudioEnded);
     };
-  }, [currentSegment, onPlayPauseToggle]);
+  }, [currentSegment, onPlayPauseToggle, nextSegment]);
   
   // Handle play/pause toggling
   useEffect(() => {
@@ -151,31 +163,37 @@ const BasicSequencePlayer: React.FC<BasicSequencePlayerProps> = ({
       console.log(`Video state: readyState=${video.readyState}, paused=${video.paused}`);
       console.log(`Audio state: readyState=${audio.readyState}, paused=${audio.paused}`);
       
-      // Play video with error handling
-      const videoPromise = video.play().catch(err => {
-        console.error('Error playing video:', err);
-        console.error('Video error name:', err.name);
-        console.error('Video error message:', err.message);
-        setIsPlaying(false);
-        if (onPlayPauseToggle) onPlayPauseToggle(false);
-      });
+      // Reset positions to start of media
+      video.currentTime = 0;
+      audio.currentTime = 0;
       
-      // Play audio with error handling
-      const audioPromise = audio.play().catch(err => {
-        console.error('Error playing audio:', err);
-        console.error('Audio error name:', err.name);
-        console.error('Audio error message:', err.message);
-        setIsPlaying(false);
-        if (onPlayPauseToggle) onPlayPauseToggle(false);
-      });
-      
-      // Handle success
-      Promise.all([videoPromise, audioPromise])
+      // First, try to start the video (which is muted to avoid autoplay restrictions)
+      video.play()
         .then(() => {
-          console.log(`Successfully playing ${currentSegment}`);
+          // Video started successfully, now play the audio
+          console.log('Video started successfully, now playing audio');
+          
+          return audio.play().catch(err => {
+            console.error('Error playing audio:', err);
+            console.error('Audio error name:', err.name);
+            console.error('Audio error message:', err.message);
+            
+            // If audio fails, pause video too
+            video.pause();
+            
+            setIsPlaying(false);
+            if (onPlayPauseToggle) onPlayPauseToggle(false);
+            
+            throw err; // Re-throw to be caught by outer catch
+          });
+        })
+        .then(() => {
+          console.log(`Successfully playing ${currentSegment} video and audio in sync`);
         })
         .catch(err => {
-          console.error('Error in Promise.all:', err);
+          console.error('Error starting playback:', err);
+          setIsPlaying(false);
+          if (onPlayPauseToggle) onPlayPauseToggle(false);
         });
     } else {
       // When toggling to pause
@@ -248,12 +266,12 @@ const BasicSequencePlayer: React.FC<BasicSequencePlayerProps> = ({
           </div>
         )}
         
-        {/* Video */}
+        {/* Video - always muted, audio comes from separate audio element */}
         <video
           ref={videoRef}
           src={videoSrc}
-          className="absolute inset-0 w-full h-full object-cover"
-          muted={false} 
+          className="absolute inset-0 w-full h-full object-cover z-1"
+          muted={true} // Always mute video to avoid autoplay restrictions
           loop={false}
           playsInline
           preload="metadata"
@@ -264,7 +282,7 @@ const BasicSequencePlayer: React.FC<BasicSequencePlayerProps> = ({
           }}
         />
         
-        {/* Audio - hidden */}
+        {/* Audio - hidden but carries the actual sound */}
         <audio 
           ref={audioRef}
           src={audioSrc}
