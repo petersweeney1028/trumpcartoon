@@ -33,6 +33,22 @@ const UltraSimplePlayer: React.FC<UltraSimplePlayerProps> = ({
   // Media refs
   const videoRef = useRef<HTMLVideoElement>(null);
   const audioRef = useRef<HTMLAudioElement>(null);
+  const autoplayTriggerRef = useRef<HTMLButtonElement>(null);
+  
+  // Autoplay hack: Simulate user interaction when component mounts
+  useEffect(() => {
+    console.log('Attempting autoplay workaround...');
+    
+    // Short timeout to ensure DOM is ready
+    const timeoutId = setTimeout(() => {
+      if (autoplayTriggerRef.current) {
+        console.log('Triggering synthetic click for autoplay');
+        autoplayTriggerRef.current.click();
+      }
+    }, 100);
+    
+    return () => clearTimeout(timeoutId);
+  }, []);
   
   // Segment order
   const segments: CharacterSegment[] = ['trump1', 'zelensky', 'trump2', 'vance'];
@@ -83,11 +99,14 @@ const UltraSimplePlayer: React.FC<UltraSimplePlayerProps> = ({
       audioRef.current.currentTime = 0;
     }
     
-    // Player was playing before segment change, resume after loading
-    if (isPlaying) {
-      setIsPlaying(false);
-    }
-  }, [currentSegment, videoSrc, audioSrc]);
+    // When segment changes, we keep track that we're in a transitioning state
+    // but don't change isPlaying here - that will be handled in the autoplay logic
+    const wasPlaying = isPlaying;
+    
+    // We'll resume playing in the loadedCount effect
+    // Important: Don't reset isPlaying here if it was already true, we'll handle that elsewhere
+    // This prevents race conditions and infinite loops
+  }, [currentSegment, videoSrc, audioSrc, isPlaying]);
   
   // Handle media loaded events
   useEffect(() => {
@@ -116,18 +135,27 @@ const UltraSimplePlayer: React.FC<UltraSimplePlayerProps> = ({
     };
   }, [currentSegment]);
   
-  // Determine when both media are loaded
+  // Determine when both media are loaded and autoplay
   useEffect(() => {
     if (loadedCount >= 2) {
       console.log(`Both video and audio loaded for ${currentSegment}`);
       setIsLoading(false);
+      
+      // Auto-start playback once media is loaded
+      // Note: This should be combined with the "click hack" below
+      if (!isPlaying) {
+        console.log('Auto-starting playback after media loaded');
+        setHasUserInteracted(true); // Simulate user interaction
+        setIsPlaying(true); // Start playback
+      }
     }
-  }, [loadedCount, currentSegment]);
+  }, [loadedCount, currentSegment, isPlaying]);
   
   // Handle audio ended event to move to next segment
   useEffect(() => {
     const audio = audioRef.current;
-    if (!audio) return;
+    const video = videoRef.current;
+    if (!audio || !video) return;
     
     const handleAudioEnded = () => {
       console.log(`Audio for ${currentSegment} ended`);
@@ -138,15 +166,24 @@ const UltraSimplePlayer: React.FC<UltraSimplePlayerProps> = ({
         // Move to next segment
         const nextSegment = segments[currentIndex + 1];
         console.log(`Moving to next segment: ${nextSegment}`);
+        
+        // Crucial: Stop current media completely
+        video.pause();
+        audio.pause();
+        
+        // Update segment - this will trigger media loading for next segment
         setCurrentSegment(nextSegment);
       } else {
         // End of sequence
         console.log('End of sequence reached');
+        video.pause();
+        audio.pause();
         setIsPlaying(false);
         if (onPlayPauseToggle) onPlayPauseToggle(false);
       }
     };
     
+    // Add the event listener
     audio.addEventListener('ended', handleAudioEnded);
     
     return () => {
@@ -213,6 +250,14 @@ const UltraSimplePlayer: React.FC<UltraSimplePlayerProps> = ({
   
   return (
     <div className="bg-dark rounded-lg overflow-hidden shadow-lg relative">
+      {/* Hidden autoplay trigger button - for browser autoplay policy bypass */}
+      <button 
+        ref={autoplayTriggerRef}
+        onClick={handlePlayButtonClick}
+        style={{ position: 'absolute', opacity: 0, width: '1px', height: '1px', pointerEvents: 'none' }}
+        aria-hidden="true"
+      />
+      
       <div className="relative pt-[56.25%]">
         {/* Loading indicator */}
         {isLoading && (
