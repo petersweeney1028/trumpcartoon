@@ -10,6 +10,7 @@ import DirectSequencePlayer from "@/components/DirectSequencePlayer";
 import SimpleSequencePlayer from "@/components/SimpleSequencePlayer";
 import FixedSequencePlayer from "@/components/FixedSequencePlayer";
 import BasicSequencePlayer from "@/components/BasicSequencePlayer";
+import UltraSimplePlayer from "@/components/UltraSimplePlayer";
 import DebugPlayer from "@/components/DebugPlayer";
 import SharePanel from "@/components/SharePanel";
 import RemixDetails from "@/components/RemixDetails";
@@ -88,10 +89,10 @@ const ScenePage = () => {
           <div className="lg:w-7/12">
             {remix.clipInfo ? (
               <>
-                <div className="bg-blue-100 p-2 mb-2 text-sm rounded-md">
-                  Using BasicSequencePlayer (ultra-simple implementation with minimal complexity)
+                <div className="bg-purple-100 p-2 mb-2 text-sm rounded-md">
+                  Using UltraSimplePlayer (high isolation, no race conditions, true async/await)
                 </div>
-                <BasicSequencePlayer
+                <UltraSimplePlayer
                   clipInfo={remix.clipInfo}
                   script={remix.script}
                   onPlayPauseToggle={handlePlayPauseToggle}
