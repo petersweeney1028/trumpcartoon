@@ -219,7 +219,9 @@ def main():
     }
     """
     if len(sys.argv) != 2:
-        print("Usage: python tts_processor.py '{\"script\": {...}, \"apiKey\": \"...\"}'")
+        # Use stderr for error messages to keep stdout clean for JSON
+        print("Usage: python tts_processor.py '{\"script\": {...}, \"apiKey\": \"...\"}'", file=sys.stderr)
+        print(json.dumps({"error": "Missing JSON input argument"}))
         sys.exit(1)
     
     try:
@@ -229,20 +231,48 @@ def main():
         api_key = input_data.get("apiKey")
         
         if not script:
-            print("Error: Missing 'script' field in input JSON")
+            print("Error: Missing 'script' field in input JSON", file=sys.stderr)
+            print(json.dumps({"error": "Missing 'script' field in input"}))
             sys.exit(1)
         
-        # Generate TTS for all lines
-        result = generate_all_tts(script, api_key)
+        # Redirect all logs to stderr
+        log_file = os.path.join(VOICES_DIR, f"tts_log_{time.time()}.log")
+        with open(log_file, 'w') as f:
+            # Save original stdout/stderr
+            original_stdout = sys.stdout
+            original_stderr = sys.stderr
+            
+            # Redirect stdout to the log file for debugging logs
+            sys.stdout = f
+            
+            try:
+                # Generate TTS for all lines
+                print(f"Processing script: {json.dumps(script)}", file=f)
+                result = generate_all_tts(script, api_key)
+                print(f"Generated results: {json.dumps(result)}", file=f)
+                
+                # Restore stdout and print only the JSON result
+                sys.stdout = original_stdout
+                print(json.dumps(result))
+            except Exception as inner_e:
+                # Log the error
+                print(f"Error during TTS generation: {str(inner_e)}", file=f)
+                
+                # Restore stdout
+                sys.stdout = original_stdout
+                print(json.dumps({"error": str(inner_e)}))
+                sys.exit(1)
+            finally:
+                # Ensure we restore stdout/stderr
+                sys.stdout = original_stdout
+                sys.stderr = original_stderr
         
-        # Clear any previous output to stdout
-        sys.stdout = open(os.devnull, 'w')
-        
-        # Restore stdout and print only the JSON result
-        sys.stdout = sys.__stdout__
-        print(json.dumps(result))
-        
+    except json.JSONDecodeError as je:
+        print(f"JSON parsing error: {str(je)}", file=sys.stderr)
+        print(json.dumps({"error": f"Invalid JSON input: {str(je)}"}))
+        sys.exit(1)
     except Exception as e:
+        print(f"Unexpected error: {str(e)}", file=sys.stderr)
         print(json.dumps({"error": str(e)}))
         sys.exit(1)
 

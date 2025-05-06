@@ -232,7 +232,9 @@ def main():
     }
     """
     if len(sys.argv) != 2:
-        print("Usage: python video_processor.py '{\"remixId\": \"123\", \"audioFiles\": {...}}'")
+        # Use stderr for error messages to keep stdout clean for JSON
+        print("Usage: python video_processor.py '{\"remixId\": \"123\", \"audioFiles\": {...}}'", file=sys.stderr)
+        print(json.dumps({"error": "Missing JSON input argument", "videoUrl": "/videos/remix_error.mp4"}))
         sys.exit(1)
     
     try:
@@ -242,39 +244,62 @@ def main():
         audio_files = input_data.get("audioFiles")
         
         if not remix_id or not audio_files:
-            print("Error: Missing required fields in input JSON")
+            print("Error: Missing required fields in input JSON", file=sys.stderr)
+            print(json.dumps({
+                "error": "Missing required fields (remixId or audioFiles) in input JSON", 
+                "videoUrl": f"/videos/remix_error.mp4"
+            }))
             sys.exit(1)
         
-        # Setup logging to a file for debugging while still outputting JSON to stdout
+        # Setup logging to a file for debugging
         log_file = os.path.join(TEMP_DIR, f"video_processor_{remix_id}.log")
         with open(log_file, 'w') as f:
-            # Log input data for debugging
-            f.write(f"Processing remix ID: {remix_id}\n")
-            f.write(f"Audio files: {json.dumps(audio_files, indent=2)}\n")
-            f.write(f"Using ffmpeg version: {subprocess.getoutput('ffmpeg -version')[:100]}...\n")
-            
-            # Redirect stdout to prevent console pollution
+            # Save original stdout/stderr
             original_stdout = sys.stdout
+            original_stderr = sys.stderr
+            
+            # Redirect stdout to the log file for debugging logs
             sys.stdout = f
+            sys.stderr = f
             
             try:
+                # Log input data for debugging
+                print(f"Processing remix ID: {remix_id}")
+                print(f"Audio files: {json.dumps(audio_files, indent=2)}")
+                print(f"Using ffmpeg version: {subprocess.getoutput('ffmpeg -version')[:100]}...")
+                
                 # Process the video
                 result = process_video(remix_id, audio_files)
+                print(f"Processing complete. Result: {json.dumps(result)}")
                 
                 # Restore stdout and print only the JSON result
                 sys.stdout = original_stdout
                 print(json.dumps(result))
-            except Exception as e:
-                f.write(f"Error during processing: {str(e)}\n")
+            except Exception as inner_e:
+                # Log the error
+                print(f"Error during processing: {str(inner_e)}")
+                
                 # Restore stdout
                 sys.stdout = original_stdout
+                
                 # Return an error result with a valid videoUrl fallback
                 output_filename = f"remix_{remix_id}.mp4"
                 print(json.dumps({
-                    "error": str(e),
+                    "error": str(inner_e),
                     "videoUrl": f"/videos/{output_filename}"
                 }))
+            finally:
+                # Ensure we restore stdout/stderr
+                sys.stdout = original_stdout
+                sys.stderr = original_stderr
                 
+    except json.JSONDecodeError as je:
+        print(f"JSON parsing error: {str(je)}", file=sys.stderr)
+        print(json.dumps({
+            "error": f"Invalid JSON input: {str(je)}", 
+            "videoUrl": "/videos/remix_error.mp4"
+        }))
+        sys.exit(1)
     except Exception as e:
         # For outer exceptions where remix_id might not be defined yet
         error_id = "error"
@@ -283,7 +308,8 @@ def main():
                 error_id = remix_id
         except:
             pass
-            
+        
+        print(f"Unexpected error: {str(e)}", file=sys.stderr)
         print(json.dumps({
             "error": str(e),
             "videoUrl": f"/videos/remix_{error_id}.mp4"

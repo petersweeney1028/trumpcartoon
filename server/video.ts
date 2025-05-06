@@ -1,13 +1,23 @@
 import path from "path";
 import { promisify } from "util";
 import fs from "fs";
+import { access } from "fs/promises";
 import { randomUUID } from "crypto";
 import { spawn } from "child_process";
 
 const mkdir = promisify(fs.mkdir);
 const writeFile = promisify(fs.writeFile);
 const readFile = promisify(fs.readFile);
-const exists = promisify(fs.exists);
+
+// File existence check using fs.promises.access instead of deprecated fs.exists
+async function fileExists(filePath: string): Promise<boolean> {
+  try {
+    await access(filePath);
+    return true;
+  } catch {
+    return false;
+  }
+}
 
 // Set up the directories to store rendered videos and audio files
 const STATIC_DIR = path.join(process.cwd(), "static");
@@ -59,28 +69,46 @@ async function runPythonScript(scriptPath: string, jsonInput: any): Promise<any>
       }
       
       try {
-        // Try to find JSON output in the stdout string
-        // Look for the last line that starts with '{' and ends with '}'
-        const lines = stdoutData.trim().split('\n');
-        let jsonLine = '';
+        // In the improved Python scripts, JSON output is the only output to stdout
+        // Just parse the whole stdout as JSON directly
+        const trimmedOutput = stdoutData.trim();
         
-        for (let i = lines.length - 1; i >= 0; i--) {
-          const line = lines[i].trim();
-          if (line.startsWith('{') && line.endsWith('}')) {
-            jsonLine = line;
-            break;
+        // But for backward compatibility, also handle multi-line output where we need to find JSON
+        if (!trimmedOutput.startsWith('{') || !trimmedOutput.endsWith('}')) {
+          // If the output isn't a simple JSON object, look for a JSON line
+          const lines = trimmedOutput.split('\n');
+          let jsonLine = '';
+          
+          for (let i = lines.length - 1; i >= 0; i--) {
+            const line = lines[i].trim();
+            if (line.startsWith('{') && line.endsWith('}')) {
+              jsonLine = line;
+              break;
+            }
           }
-        }
-        
-        if (!jsonLine) {
+          
+          if (jsonLine) {
+            const result = JSON.parse(jsonLine);
+            resolve(result);
+            return;
+          }
+          
           throw new Error('No JSON output found in Python script output');
         }
         
-        const result = JSON.parse(jsonLine);
+        // Parse the whole output as JSON
+        const result = JSON.parse(trimmedOutput);
+        
+        // Check if there's an error in the result
+        if (result.error) {
+          console.error(`Python script returned error: ${result.error}`);
+          // Still return the result, but log the error
+        }
+        
         resolve(result);
       } catch (error) {
         console.error('Error parsing Python script output as JSON:', error);
-        console.error('Output:', stdoutData);
+        console.error('Raw stdout:', stdoutData);
         reject(new Error(`Failed to parse Python script output: ${error}`));
       }
     });
