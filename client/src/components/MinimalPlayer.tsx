@@ -137,6 +137,7 @@ const MinimalPlayer: React.FC<MinimalPlayerProps> = ({
   
   // State to track if this is the first segment (needs user interaction)
   const [needsInitialPlay, setNeedsInitialPlay] = useState(true);
+  const [hasInteracted, setHasInteracted] = useState(false);
 
   // Start playback when both media elements are ready
   useEffect(() => {
@@ -148,7 +149,7 @@ const MinimalPlayer: React.FC<MinimalPlayerProps> = ({
     
     if (!video || !audio) return;
     
-    console.log(`Both media ready for ${currentSegment}, starting playback (hasInteracted: ${userHasInteracted}, needsInitialPlay: ${needsInitialPlay})`);
+    console.log(`Both media ready for ${currentSegment}, starting playback (hasInteracted: ${hasInteracted}, needsInitialPlay: ${needsInitialPlay})`);
     
     // Function to synchronize playback
     const playMedia = async () => {
@@ -158,7 +159,7 @@ const MinimalPlayer: React.FC<MinimalPlayerProps> = ({
         audio.currentTime = 0;
         
         // Check if this is not the first segment (auto-transition) or if user has interacted
-        const canAutoplay = !needsInitialPlay || userHasInteracted;
+        const canAutoplay = !needsInitialPlay || hasInteracted;
         
         if (canAutoplay) {
           // For subsequent segments we can try autoplay
@@ -196,7 +197,7 @@ const MinimalPlayer: React.FC<MinimalPlayerProps> = ({
     // Start playback
     playMedia();
     
-  }, [mediaReady, currentSegment, onPlayPauseToggle, needsInitialPlay]);
+  }, [mediaReady, currentSegment, onPlayPauseToggle, needsInitialPlay, hasInteracted]);
   
   // Handle manual play/pause
   const togglePlayPause = () => {
@@ -206,7 +207,7 @@ const MinimalPlayer: React.FC<MinimalPlayerProps> = ({
     if (!video || !audio) return;
     
     // Mark that user has interacted with the player
-    userHasInteracted = true;
+    setHasInteracted(true);
     
     if (isPlaying) {
       // Pause both media elements

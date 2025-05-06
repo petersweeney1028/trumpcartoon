@@ -57,9 +57,39 @@ const SuperBasicPlayer: React.FC<SuperBasicPlayerProps> = ({
     }
   ];
   
+  // Track loading errors
+  const [loadError, setLoadError] = useState<string | null>(null);
+  
+  // Log video load error details
+  const handleVideoError = (event: any) => {
+    const video = event.target;
+    console.error('Video load error:', {
+      src: video.src,
+      error: video.error?.message || 'Unknown error',
+      code: video.error?.code,
+      networkState: video.networkState,
+      readyState: video.readyState
+    });
+    setLoadError(`Video failed to load (${scenes[currentScene].name})`);
+  };
+  
+  // Log audio load error details 
+  const handleAudioError = (event: any) => {
+    const audio = event.target;
+    console.error('Audio load error:', {
+      src: audio.src,
+      error: audio.error?.message || 'Unknown error',
+      code: audio.error?.code,
+      networkState: audio.networkState,
+      readyState: audio.readyState
+    });
+    setLoadError(`Audio failed to load (${scenes[currentScene].name})`);
+  };
+  
   // When scene changes, update the video and audio sources
   useEffect(() => {
     setIsLoading(true);
+    setLoadError(null);
     
     const video = videoRef.current;
     const audio = audioRef.current;
@@ -70,28 +100,39 @@ const SuperBasicPlayer: React.FC<SuperBasicPlayerProps> = ({
     video.pause();
     audio.pause();
     
-    // Update sources
-    video.src = scenes[currentScene].video;
-    audio.src = scenes[currentScene].audio;
+    // Track loading state for both media elements
+    let videoReady = false;
+    let audioReady = false;
     
-    // Preload media
-    video.load();
-    audio.load();
-    
-    // Set up listeners for this scene only
-    const handleCanPlay = () => {
-      // Check if both video and audio are ready
-      if (video.readyState >= 3 && audio.readyState >= 3) {
+    // Helper to check if both media elements are ready
+    const checkBothReady = () => {
+      if (videoReady && audioReady) {
         setIsLoading(false);
+        console.log(`Both video and audio ready for scene ${currentScene}`);
         
         // Auto-play if not the first scene or if already playing
         if (currentScene > 0 || isPlaying) {
+          console.log(`Auto-playing scene ${currentScene}`);
           playMedia();
         }
       }
     };
     
+    // Set up listeners for this scene only
+    const handleVideoCanPlay = () => {
+      console.log(`Video ready for scene ${currentScene}`);
+      videoReady = true;
+      checkBothReady();
+    };
+    
+    const handleAudioCanPlay = () => {
+      console.log(`Audio ready for scene ${currentScene}`);
+      audioReady = true;
+      checkBothReady();
+    };
+    
     const handleAudioEnded = () => {
+      console.log(`Scene ${currentScene} ended`);
       // When audio ends, move to next scene
       if (currentScene < scenes.length - 1) {
         setCurrentScene(currentScene + 1);
@@ -103,44 +144,105 @@ const SuperBasicPlayer: React.FC<SuperBasicPlayerProps> = ({
     };
     
     // Add event listeners
-    video.addEventListener('canplaythrough', handleCanPlay);
-    audio.addEventListener('canplaythrough', handleCanPlay);
+    video.addEventListener('canplaythrough', handleVideoCanPlay);
+    video.addEventListener('error', handleVideoError);
+    
+    audio.addEventListener('canplaythrough', handleAudioCanPlay);
+    audio.addEventListener('error', handleAudioError);
     audio.addEventListener('ended', handleAudioEnded);
     
+    // Set sources and start loading
+    console.log(`Loading scene ${currentScene}:`, scenes[currentScene]);
+    video.src = scenes[currentScene].video;
+    audio.src = scenes[currentScene].audio;
+    
+    // Preload media
+    video.load();
+    audio.load();
+    
+    // Set a timeout to detect long loading times
+    const timeoutId = setTimeout(() => {
+      if (isLoading) {
+        console.warn(`Loading timeout for scene ${currentScene} (still waiting after 8 seconds)`);
+      }
+    }, 8000);
+    
     return () => {
-      // Clean up event listeners
-      video.removeEventListener('canplaythrough', handleCanPlay);
-      audio.removeEventListener('canplaythrough', handleCanPlay);
+      // Clean up event listeners and timeout
+      video.removeEventListener('canplaythrough', handleVideoCanPlay);
+      video.removeEventListener('error', handleVideoError);
+      
+      audio.removeEventListener('canplaythrough', handleAudioCanPlay);
+      audio.removeEventListener('error', handleAudioError);
       audio.removeEventListener('ended', handleAudioEnded);
+      
+      clearTimeout(timeoutId);
     };
   }, [currentScene, scenes, isPlaying, onPlayPauseToggle]);
   
   // Function to play both media in sync
-  const playMedia = () => {
+  const playMedia = async () => {
+    console.log("Attempting to play media");
     const video = videoRef.current;
     const audio = audioRef.current;
     
-    if (!video || !audio) return;
+    if (!video || !audio) {
+      console.error("Media elements not available");
+      return;
+    }
     
-    // Reset to beginning
-    video.currentTime = 0;
-    audio.currentTime = 0;
-    
-    // Play video first (muted, so no autoplay restrictions)
-    const videoPromise = video.play();
-    
-    // Then play audio
-    videoPromise
-      .then(() => audio.play())
-      .then(() => {
-        setIsPlaying(true);
-        if (onPlayPauseToggle) onPlayPauseToggle(true);
-      })
-      .catch(error => {
-        console.error('Error playing media:', error);
-        setIsPlaying(false);
-        if (onPlayPauseToggle) onPlayPauseToggle(false);
-      });
+    try {
+      // Make sure we have valid sources
+      if (!video.src || !audio.src) {
+        console.error("Missing media sources:", { videoSrc: video.src, audioSrc: audio.src });
+        setLoadError("Media source missing");
+        return;
+      }
+      
+      // Reset to beginning
+      video.currentTime = 0;
+      audio.currentTime = 0;
+      
+      console.log("Playing video:", video.src);
+      // Play video first (muted, so no autoplay restrictions)
+      await video.play();
+      
+      console.log("Playing audio:", audio.src);
+      // Then play audio
+      await audio.play();
+      
+      // Update state
+      console.log("Both media playing successfully");
+      setIsPlaying(true);
+      if (onPlayPauseToggle) onPlayPauseToggle(true);
+      
+    } catch (error) {
+      console.error('Error playing media:', error);
+      
+      // Try to get specific error details
+      let errorDetails = "";
+      
+      if (video.error) {
+        errorDetails += `Video: ${video.error.message || video.error.code} `;
+      }
+      
+      if (audio.error) {
+        errorDetails += `Audio: ${audio.error.message || audio.error.code}`;
+      }
+      
+      // Show error and pause both media
+      setLoadError(`Playback failed: ${errorDetails || (error instanceof Error ? error.message : "unknown error")}`);
+      setIsPlaying(false);
+      
+      try {
+        video.pause();
+        audio.pause();
+      } catch (e) {
+        // Ignore errors on pause
+      }
+      
+      if (onPlayPauseToggle) onPlayPauseToggle(false);
+    }
   };
   
   // Function to toggle play/pause
@@ -182,12 +284,30 @@ const SuperBasicPlayer: React.FC<SuperBasicPlayerProps> = ({
           preload="auto"
         />
         
-        {/* Loading indicator */}
+        {/* Loading indicator or error */}
         {isLoading && (
           <div className="absolute inset-0 flex items-center justify-center bg-black bg-opacity-50 z-20">
             <div className="flex flex-col items-center">
               <div className="w-12 h-12 border-4 border-primary border-t-transparent rounded-full animate-spin"></div>
               <p className="text-white text-sm mt-2">Loading {scenes[currentScene].name}...</p>
+            </div>
+          </div>
+        )}
+        
+        {/* Error display */}
+        {loadError && (
+          <div className="absolute inset-0 flex items-center justify-center bg-black bg-opacity-60 z-25">
+            <div className="bg-red-800 p-4 rounded max-w-md text-center">
+              <p className="text-white font-medium">{loadError}</p>
+              <p className="text-white text-sm mt-2">
+                Please try refreshing the page. If the issue persists, a file may be missing.
+              </p>
+              <button 
+                className="mt-4 bg-white text-red-800 font-bold py-2 px-4 rounded"
+                onClick={() => setLoadError(null)}
+              >
+                Dismiss
+              </button>
             </div>
           </div>
         )}
