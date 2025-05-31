@@ -1,0 +1,36 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Media Test</title>
+</head>
+<body>
+    <h1>Direct Media Test</h1>
+    
+    <h2>Video Test</h2>
+    <video controls preload="auto" style="width: 400px;">
+        <source src="/static/clips/trump1.mp4" type="video/mp4">
+        Your browser does not support the video tag.
+    </video>
+    
+    <h2>Audio Test</h2>
+    <audio controls preload="auto">
+        <source src="/static/voices/trump_64b63b82.mp3" type="audio/mpeg">
+        Your browser does not support the audio tag.
+    </audio>
+    
+    <script>
+        const video = document.querySelector('video');
+        const audio = document.querySelector('audio');
+        
+        video.addEventListener('loadstart', () => console.log('Video: loadstart'));
+        video.addEventListener('loadedmetadata', () => console.log('Video: metadata loaded'));
+        video.addEventListener('canplay', () => console.log('Video: can play'));
+        video.addEventListener('error', (e) => console.error('Video error:', e));
+        
+        audio.addEventListener('loadstart', () => console.log('Audio: loadstart'));
+        audio.addEventListener('loadedmetadata', () => console.log('Audio: metadata loaded'));
+        audio.addEventListener('canplay', () => console.log('Audio: can play'));
+        audio.addEventListener('error', (e) => console.error('Audio error:', e));
+    </script>
+</body>
+</html>
