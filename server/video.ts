@@ -1,7 +1,7 @@
 import path from "path";
 import { promisify } from "util";
 import fs from "fs";
-import { access } from "fs/promises";
+import { access, copyFile } from "fs/promises";
 import { randomUUID } from "crypto";
 import { spawn } from "child_process";
 
@@ -223,6 +223,17 @@ export async function createVideo(
     const result = await runPythonScript(scriptPath, input);
     
     console.log(`Video generated successfully for remix ${id}: ${result.videoUrl}`);
+    
+    // Copy the generated video from /videos to /static/videos for Express serving
+    const sourceVideoPath = path.join(process.cwd(), 'videos', `remix_${id}.mp4`);
+    const targetVideoPath = path.join(process.cwd(), 'static', 'videos', `remix_${id}.mp4`);
+    
+    if (await fileExists(sourceVideoPath)) {
+      await copyFile(sourceVideoPath, targetVideoPath);
+      console.log(`✅ Copied video to static path: ${targetVideoPath}`);
+    } else {
+      console.error(`Source video not found: ${sourceVideoPath}`);
+    }
     
     // Return both the videoUrl (for the combined video) and clipInfo (for the individual clips)
     return {
