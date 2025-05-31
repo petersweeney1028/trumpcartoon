@@ -1,0 +1,48 @@
+Loading scene 0: 
+Object {name: "trump1", video: "/static/clips/trump1.mp4", audio: "/static/voices/trump_6f68a073.mp3", caption: "Pop-Tarts are tremendous, folks. I know Pop-Tarts better than anyone. The best breakfast, believe…"}
+Audio ready for scene 0
+Video ready for scene 0
+Both video and audio ready for scene 0
+Loading scene 0: 
+Object {name: "trump1", video: "/static/clips/trump1.mp4", audio: "/static/voices/trump_6f68a073.mp3", caption: "Pop-Tarts are tremendous, folks. I know Pop-Tarts better than anyone. The best breakfast, believe…"}
+Loading scene 0: 
+Object {name: "trump1", video: "/static/clips/trump1.mp4", audio: "/static/voices/trump_6f68a073.mp3", caption: "Pop-Tarts are tremendous, folks. I know Pop-Tarts better than anyone. The best breakfast, believe…"}
+Audio ready for scene 0
+Video ready for scene 0
+Both video and audio ready for scene 0
+Audio ready for scene 0
+Both video and audio ready for scene 0
+Loading scene 0: 
+Object {name: "trump1", video: "/static/clips/trump1.mp4", audio: "/static/voices/trump_6f68a073.mp3", caption: "Pop-Tarts are tremendous, folks. I know Pop-Tarts better than anyone. The best breakfast, believe…"}
+Loading scene 0: 
+Object {name: "trump1", video: "/static/clips/trump1.mp4", audio: "/static/voices/trump_6f68a073.mp3", caption: "Pop-Tarts are tremendous, folks. I know Pop-Tarts better than anyone. The best breakfast, believe…"}
+Audio ready for scene 0
+Video ready for scene 0
+Both video and audio ready for scene 0
+Loading scene 0: 
+Object {name: "trump1", video: "/static/clips/trump1.mp4", audio: "/static/voices/trump_6f68a073.mp3", caption: "Pop-Tarts are tremendous, folks. I know Pop-Tarts better than anyone. The best breakfast, believe…"}
+Loading scene 0: 
+Object {name: "trump1", video: "/static/clips/trump1.mp4", audio: "/static/voices/trump_6f68a073.mp3", caption: "Pop-Tarts are tremendous, folks. I know Pop-Tarts better than anyone. The best breakfast, believe…"}
+Audio ready for scene 0
+Video ready for scene 0
+Both video and audio ready for scene 0
+Loading scene 0: 
+Object {name: "trump1", video: "/static/clips/trump1.mp4", audio: "/static/voices/trump_6f68a073.mp3", caption: "Pop-Tarts are tremendous, folks. I know Pop-Tarts better than anyone. The best breakfast, believe…"}
+Loading scene 0: 
+Object {name: "trump1", video: "/static/clips/trump1.mp4", audio: "/static/voices/trump_6f68a073.mp3", caption: "Pop-Tarts are tremendous, folks. I know Pop-Tarts better than anyone. The best breakfast, believe…"}
+Audio ready for scene 0
+Video ready for scene 0
+Both video and audio ready for scene 0
+Audio ready for scene 0
+Both video and audio ready for scene 0
+Loading scene 0: 
+Object {name: "trump1", video: "/static/clips/trump1.mp4", audio: "/static/voices/trump_6f68a073.mp3", caption: "Pop-Tarts are tremendous, folks. I know Pop-Tarts better than anyone. The best breakfast, believe…"}
+Loading scene 0: 
+Object {name: "trump1", video: "/static/clips/trump1.mp4", audio: "/static/voices/trump_6f68a073.mp3", caption: "Pop-Tarts are tremendous, folks. I know Pop-Tarts better than anyone. The best breakfast, believe…"}
+Audio ready for scene 0
+Video ready for scene 0
+Both video and audio ready for scene 0
+Loading scene 0: 
+Object {name: "trump1", video: "/static/clips/trump1.mp4", audio: "/static/voices/trump_6f68a073.mp3", caption: "Pop-Tarts are tremendous, folks. I know Pop-Tarts better than anyone. The best breakfast, believe…"}
+Loading scene 0: 
+Object {name: "trump1", video: "/static/clips/trump1.mp4", audio: "/static/voices/trump_6f68a073.mp3", caption: "Pop-Tarts are tremendous, folks. I know Pop-Tarts better than anyone. The best breakfast, believe…"}

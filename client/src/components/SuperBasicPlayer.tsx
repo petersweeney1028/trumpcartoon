@@ -40,8 +40,8 @@ const SuperBasicPlayer: React.FC<SuperBasicPlayerProps> = ({
   const videoRef = useRef<HTMLVideoElement>(null);
   const audioRef = useRef<HTMLAudioElement>(null);
   
-  // Scene definitions - sequence of video/audio pairs
-  const scenes = [
+  // Memoize scenes to prevent infinite loops
+  const scenes = React.useMemo(() => [
     { 
       name: 'trump1',
       video: `/static${clipInfo.trump1Video}`,
@@ -66,7 +66,7 @@ const SuperBasicPlayer: React.FC<SuperBasicPlayerProps> = ({
       audio: `/static${clipInfo.vanceAudio}`,
       caption: script.vance
     }
-  ];
+  ], [clipInfo, script]);
   
   // Track loading errors
   const [loadError, setLoadError] = useState<string | null>(null);
@@ -158,7 +158,7 @@ const SuperBasicPlayer: React.FC<SuperBasicPlayerProps> = ({
       } else {
         // End of all scenes
         setIsPlaying(false);
-        if (onPlayPauseToggle) onPlayPauseToggle(false);
+        onPlayPauseToggle?.(false);
       }
     };
     
@@ -197,7 +197,7 @@ const SuperBasicPlayer: React.FC<SuperBasicPlayerProps> = ({
       
       clearTimeout(timeoutId);
     };
-  }, [currentScene, scenes, isPlaying, onPlayPauseToggle, userInteracted]);
+  }, [currentScene, scenes, isPlaying, userInteracted]);
   
   // Function to play both media in sync
   const playMedia = async () => {
@@ -254,7 +254,7 @@ const SuperBasicPlayer: React.FC<SuperBasicPlayerProps> = ({
       // Update state once both are playing
       console.log("Both media playing successfully");
       setIsPlaying(true);
-      if (onPlayPauseToggle) onPlayPauseToggle(true);
+      onPlayPauseToggle?.(true);
       
     } catch (error) {
       console.error('Error playing media:', error);
@@ -278,7 +278,7 @@ const SuperBasicPlayer: React.FC<SuperBasicPlayerProps> = ({
           // Ignore errors on pause
         }
         
-        if (onPlayPauseToggle) onPlayPauseToggle(false);
+        onPlayPauseToggle?.(false);
         return;
       }
       
@@ -304,7 +304,7 @@ const SuperBasicPlayer: React.FC<SuperBasicPlayerProps> = ({
         // Ignore errors on pause
       }
       
-      if (onPlayPauseToggle) onPlayPauseToggle(false);
+      onPlayPauseToggle?.(false);
     }
   };
   
@@ -320,7 +320,7 @@ const SuperBasicPlayer: React.FC<SuperBasicPlayerProps> = ({
       video.pause();
       audio.pause();
       setIsPlaying(false);
-      if (onPlayPauseToggle) onPlayPauseToggle(false);
+      onPlayPauseToggle?.(false);
     } else {
       // Update our interaction state
       setUserInteracted(true);
