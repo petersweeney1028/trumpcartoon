@@ -8,6 +8,7 @@ import { z } from "zod";
 import { generateScriptSchema, renderRemixSchema } from "@shared/schema";
 import { randomUUID } from "crypto";
 import path from "path";
+import fs from "fs";
 
 export async function registerRoutes(app: Express): Promise<Server> {
   // prefix all routes with /api
@@ -210,7 +211,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
       console.log(`Serving video: ${videoPath}`);
       
       // Check if the video file exists
-      const fs = require("fs");
       if (!fs.existsSync(videoPath)) {
         console.error(`Video file not found: ${videoPath}`);
         return res.status(404).json({ message: "Video not found" });
@@ -249,7 +249,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         
         stream.pipe(res);
       } catch (fileError) {
-        console.error(`File processing error: ${fileError.message}`);
+        console.error(`File processing error: ${fileError}`);
         return res.status(500).json({ message: "Error processing video file" });
       }
     } catch (error) {
