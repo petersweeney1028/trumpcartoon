@@ -224,15 +224,13 @@ export async function createVideo(
     
     console.log(`Video generated successfully for remix ${id}: ${result.videoUrl}`);
     
-    // Copy the generated video from /videos to /static/videos for Express serving
-    const sourceVideoPath = path.join(process.cwd(), 'videos', `remix_${id}.mp4`);
-    const targetVideoPath = path.join(process.cwd(), 'static', 'videos', `remix_${id}.mp4`);
+    // Video is already generated in the correct location by Python script
+    const videoPath = path.join(process.cwd(), 'static', 'videos', `remix_${id}.mp4`);
     
-    if (await fileExists(sourceVideoPath)) {
-      await copyFile(sourceVideoPath, targetVideoPath);
-      console.log(`✅ Copied video to static path: ${targetVideoPath}`);
+    if (await fileExists(videoPath)) {
+      console.log(`✅ Video file confirmed at: ${videoPath}`);
     } else {
-      console.error(`Source video not found: ${sourceVideoPath}`);
+      console.error(`Generated video not found: ${videoPath}`);
     }
     
     // Return both the videoUrl (for the combined video) and clipInfo (for the individual clips)
