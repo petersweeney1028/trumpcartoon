@@ -63,12 +63,17 @@ const SimpleVideoPlayer: React.FC<SimpleVideoPlayerProps> = ({
     
     if (!video || !audio) return;
 
+    console.log('🎬 playCurrentScene called');
+    console.log(`Video readyState: ${video.readyState}, Audio readyState: ${audio.readyState}`);
+    
     try {
       setError(null);
       
       // Make sure both are reset
       video.currentTime = 0;
       audio.currentTime = 0;
+      
+      console.log('🎵 Starting video.play() and audio.play()');
       
       // Start playing both
       const videoPromise = video.play();
@@ -78,16 +83,21 @@ const SimpleVideoPlayer: React.FC<SimpleVideoPlayerProps> = ({
       
       setIsPlaying(true);
       onPlayPauseToggle?.(true);
-      console.log(`Playing scene ${currentScene}: ${scenes[currentScene].name}`);
+      console.log(`✅ Successfully playing scene ${currentScene}: ${scenes[currentScene].name}`);
       
     } catch (error) {
-      console.warn('Play failed:', error);
+      console.error('❌ Play failed:', error);
       setIsPlaying(false);
       onPlayPauseToggle?.(false);
       
-      // Only show error for non-autoplay issues
-      const errorMsg = error instanceof Error ? error.message : String(error);
-      if (!errorMsg.includes('interrupted') && !errorMsg.includes('AbortError')) {
+      // Try simple play without promises
+      try {
+        console.log('🔄 Trying simple play fallback');
+        video.play();
+        audio.play();
+        setIsPlaying(true);
+      } catch (fallbackError) {
+        console.error('Fallback play failed:', fallbackError);
         setError('Playback failed. Click to try again.');
       }
     }
@@ -137,10 +147,11 @@ const SimpleVideoPlayer: React.FC<SimpleVideoPlayerProps> = ({
       console.log('Both media ready - starting playback');
       setIsLoading(false);
       
-      // Auto-start playback
-      if (hasUserInteracted || currentScene > 0) {
+      // Force start playback immediately
+      setTimeout(() => {
+        console.log('Forcing playback start');
         playCurrentScene();
-      }
+      }, 200);
       
     } catch (error) {
       console.error('Error loading media:', error);
