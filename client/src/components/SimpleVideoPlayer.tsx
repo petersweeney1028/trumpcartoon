@@ -106,7 +106,7 @@ const SimpleVideoPlayer: React.FC<SimpleVideoPlayerProps> = ({
   }, [onPlayPauseToggle]);
 
   // Load a specific scene
-  const loadScene = useCallback((sceneIndex: number) => {
+  const loadScene = useCallback(async (sceneIndex: number) => {
     const video = videoRef.current;
     const audio = audioRef.current;
     
@@ -117,45 +117,37 @@ const SimpleVideoPlayer: React.FC<SimpleVideoPlayerProps> = ({
     
     console.log(`Loading scene ${sceneIndex}: ${scenes[sceneIndex].name}`);
     
-    // Clear existing sources
-    video.removeAttribute('src');
-    audio.removeAttribute('src');
-    video.load();
-    audio.load();
-    
-    // Set new sources with a small delay
-    setTimeout(() => {
+    try {
+      // Set sources directly
       video.src = scenes[sceneIndex].video;
       audio.src = scenes[sceneIndex].audio;
       
-      video.preload = 'auto';
-      audio.preload = 'auto';
+      // Wait for both to be ready
+      await Promise.all([
+        new Promise(resolve => {
+          if (video.readyState >= 3) resolve(true);
+          else video.addEventListener('canplay', resolve, { once: true });
+        }),
+        new Promise(resolve => {
+          if (audio.readyState >= 3) resolve(true);
+          else audio.addEventListener('canplay', resolve, { once: true });
+        })
+      ]);
       
-      // Add one-time listeners
-      const videoReady = () => {
-        console.log('Video ready');
-        if (audio.readyState >= 3) {
-          setIsLoading(false);
-        }
-      };
+      console.log('Both media ready - starting playback');
+      setIsLoading(false);
       
-      const audioReady = () => {
-        console.log('Audio ready');
-        if (video.readyState >= 3) {
-          setIsLoading(false);
-        }
-      };
+      // Auto-start playback
+      if (hasUserInteracted || currentScene > 0) {
+        playCurrentScene();
+      }
       
-      video.addEventListener('canplay', videoReady, { once: true });
-      audio.addEventListener('canplay', audioReady, { once: true });
-      video.addEventListener('error', () => setError('Video failed'), { once: true });
-      audio.addEventListener('error', () => setError('Audio failed'), { once: true });
-      
-      video.load();
-      audio.load();
-    }, 100);
+    } catch (error) {
+      console.error('Error loading media:', error);
+      setError('Failed to load media');
+    }
     
-  }, [scenes]);
+  }, [scenes, hasUserInteracted, currentScene, playCurrentScene]);
 
   // Handle when both video and audio are ready
   const handleMediaReady = useCallback(() => {
