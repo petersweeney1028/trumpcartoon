@@ -218,6 +218,13 @@ const SuperBasicPlayer: React.FC<SuperBasicPlayerProps> = ({
         return;
       }
       
+      // Make sure both media are paused before starting
+      video.pause();
+      audio.pause();
+      
+      // Wait a brief moment to ensure pause completes
+      await new Promise(resolve => setTimeout(resolve, 50));
+      
       // Reset to beginning and make sure current time is explicitly 0
       video.currentTime = 0;
       audio.currentTime = 0;
@@ -259,13 +266,23 @@ const SuperBasicPlayer: React.FC<SuperBasicPlayerProps> = ({
     } catch (error) {
       console.error('Error playing media:', error);
       
-      // Check if this is an autoplay restriction error (DOMException with name AbortError)
+      // Check if this is an autoplay restriction error or play interrupted error
       const isAutoplayError = error && 
         error instanceof DOMException && 
         (error.name === 'AbortError' || error.name === 'NotAllowedError');
       
-      if (isAutoplayError) {
-        console.warn("Detected autoplay restriction. User interaction required.");
+      // Check if this is a play interrupted error (common when switching scenes)
+      const errorMessage = error instanceof Error ? error.message : String(error);
+      const isPlayInterrupted = errorMessage.includes('interrupted by a call to pause') ||
+                                errorMessage.includes('interrupted by a new load request');
+      
+      if (isAutoplayError || isPlayInterrupted) {
+        if (isAutoplayError) {
+          console.warn("Detected autoplay restriction. User interaction required.");
+        } else {
+          console.warn("Play request was interrupted, likely due to scene transition.");
+        }
+        
         // Don't show error - just show play button for user to click
         setIsPlaying(false);
         setIsLoading(false);
