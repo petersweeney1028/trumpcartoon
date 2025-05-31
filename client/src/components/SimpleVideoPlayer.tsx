@@ -196,31 +196,17 @@ const SimpleVideoPlayer: React.FC<SimpleVideoPlayerProps> = ({
     }
   }, [hasUserInteracted, currentScene, playCurrentScene]);
 
-  // Set up event listeners for current scene
+  // Load scene when currentScene changes
+  useEffect(() => {
+    loadScene(currentScene);
+  }, [currentScene, scenes]);
+
+  // Set up event listeners
   useEffect(() => {
     const video = videoRef.current;
     const audio = audioRef.current;
     
     if (!video || !audio) return;
-
-    let videoReady = false;
-    let audioReady = false;
-    
-    const checkReady = () => {
-      if (videoReady && audioReady) {
-        handleMediaReady();
-      }
-    };
-    
-    const handleVideoReady = () => {
-      videoReady = true;
-      checkReady();
-    };
-    
-    const handleAudioReady = () => {
-      audioReady = true;
-      checkReady();
-    };
     
     const handleAudioEnded = () => {
       if (currentScene < scenes.length - 1) {
@@ -230,19 +216,12 @@ const SimpleVideoPlayer: React.FC<SimpleVideoPlayerProps> = ({
       }
     };
     
-    video.addEventListener('canplaythrough', handleVideoReady);
-    audio.addEventListener('canplaythrough', handleAudioReady);
     audio.addEventListener('ended', handleAudioEnded);
     
-    // Load the current scene
-    loadScene(currentScene);
-    
     return () => {
-      video.removeEventListener('canplaythrough', handleVideoReady);
-      audio.removeEventListener('canplaythrough', handleAudioReady);
       audio.removeEventListener('ended', handleAudioEnded);
     };
-  }, [currentScene, loadScene, handleMediaReady, pauseCurrentScene, scenes.length]);
+  }, [currentScene, pauseCurrentScene, scenes.length]);
 
   // Handle user click to play/pause
   const handleClick = () => {

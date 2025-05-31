@@ -1,0 +1,54 @@
+Both media ready - starting playback
+🎬 playCurrentScene called
+Video readyState: 4, Audio readyState: 4
+🎵 Starting video.play() and audio.play()
+Loading scene 0: trump1
+❌ Play failed: 
+DOMException {code: 20, name: "AbortError", message: "The play() request was interrupted by a call to pause(). https://goo.gl/LdLk22", INDEX_SIZE_ERR: 1, DOMSTRING_SIZE_ERR: 2, …}
+
+🔄 Trying simple play fallback
+DOMException {code: 20, name: "AbortError", message: "The play() request was interrupted by a new load request. https://goo.gl/LdLk22", INDEX_SIZE_ERR: 1, DOMSTRING_SIZE_ERR: 2, …}
+
+DOMException {code: 20, name: "AbortError", message: "The play() request was interrupted by a new load request. https://goo.gl/LdLk22", INDEX_SIZE_ERR: 1, DOMSTRING_SIZE_ERR: 2, …}
+
+Both media ready - starting playback
+🎬 playCurrentScene called
+Video readyState: 4, Audio readyState: 4
+🎵 Starting video.play() and audio.play()
+Loading scene 0: trump1
+❌ Play failed: 
+DOMException {code: 20, name: "AbortError", message: "The play() request was interrupted by a call to pause(). https://goo.gl/LdLk22", INDEX_SIZE_ERR: 1, DOMSTRING_SIZE_ERR: 2, …}
+
+🔄 Trying simple play fallback
+DOMException {code: 20, name: "AbortError", message: "The play() request was interrupted by a new load request. https://goo.gl/LdLk22", INDEX_SIZE_ERR: 1, DOMSTRING_SIZE_ERR: 2, …}
+
+DOMException {code: 20, name: "AbortError", message: "The play() request was interrupted by a new load request. https://goo.gl/LdLk22", INDEX_SIZE_ERR: 1, DOMSTRING_SIZE_ERR: 2, …}
+
+Both media ready - starting playback
+🎬 playCurrentScene called
+Video readyState: 4, Audio readyState: 4
+🎵 Starting video.play() and audio.play()
+Loading scene 0: trump1
+❌ Play failed: 
+DOMException {code: 20, name: "AbortError", message: "The play() request was interrupted by a call to pause(). https://goo.gl/LdLk22", INDEX_SIZE_ERR: 1, DOMSTRING_SIZE_ERR: 2, …}
+
+🔄 Trying simple play fallback
+DOMException {code: 20, name: "AbortError", message: "The play() request was interrupted by a new load request. https://goo.gl/LdLk22", INDEX_SIZE_ERR: 1, DOMSTRING_SIZE_ERR: 2, …}
+
+DOMException {code: 20, name: "AbortError", message: "The play() request was interrupted by a new load request. https://goo.gl/LdLk22", INDEX_SIZE_ERR: 1, DOMSTRING_SIZE_ERR: 2, …}
+
+Both media ready - starting playback
+🎬 playCurrentScene called
+Video readyState: 4, Audio readyState: 4
+🎵 Starting video.play() and audio.play()
+Loading scene 0: trump1
+❌ Play failed: 
+DOMException {code: 20, name: "AbortError", message: "The play() request was interrupted by a call to pause(). https://goo.gl/LdLk22", INDEX_SIZE_ERR: 1, DOMSTRING_SIZE_ERR: 2, …}
+
+🔄 Trying simple play fallback
+DOMException {code: 20, name: "AbortError", message: "The play() request was interrupted by a new load request. https://goo.gl/LdLk22", INDEX_SIZE_ERR: 1, DOMSTRING_SIZE_ERR: 2, …}
+
+DOMException {code: 20, name: "AbortError", message: "The play() request was interrupted by a new load request. https://goo.gl/LdLk22", INDEX_SIZE_ERR: 1, DOMSTRING_SIZE_ERR: 2, …}
+
+Both media ready - starting playback
+🎬 playCurrentScene called
