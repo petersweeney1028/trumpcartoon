@@ -135,9 +135,25 @@ const SimpleVideoPlayer: React.FC<SimpleVideoPlayerProps> = ({
     console.log(`Loading scene ${sceneIndex}: ${scenes[sceneIndex].name}`);
     
     try {
-      // Set sources directly
+      // Pause and clear existing sources to prevent interruption
+      video.pause();
+      audio.pause();
+      
+      video.removeAttribute('src');
+      audio.removeAttribute('src');
+      video.load();
+      audio.load();
+      
+      // Small delay to ensure cleanup is complete
+      await new Promise(resolve => setTimeout(resolve, 50));
+      
+      // Set new sources
       video.src = scenes[sceneIndex].video;
       audio.src = scenes[sceneIndex].audio;
+      
+      // Force reload with new sources
+      video.load();
+      audio.load();
       
       // Wait for both to be ready
       await Promise.all([
