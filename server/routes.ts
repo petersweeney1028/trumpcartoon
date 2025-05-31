@@ -209,11 +209,28 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const videoPath = path.join(process.cwd(), "static", "videos", filename);
       
       console.log(`Serving video: ${videoPath}`);
+      console.log(`Current working directory: ${process.cwd()}`);
+      console.log(`Checking file existence...`);
       
-      // Check if the video file exists
-      if (!fs.existsSync(videoPath)) {
-        console.error(`Video file not found: ${videoPath}`);
-        return res.status(404).json({ message: "Video not found" });
+      // Add detailed debugging for file existence
+      try {
+        const fileExists = fs.existsSync(videoPath);
+        console.log(`fs.existsSync result: ${fileExists}`);
+        
+        if (!fileExists) {
+          // Try alternative paths
+          const altPath1 = path.join(__dirname, "..", "static", "videos", filename);
+          const altPath2 = path.join(".", "static", "videos", filename);
+          
+          console.log(`Alternative path 1: ${altPath1}, exists: ${fs.existsSync(altPath1)}`);
+          console.log(`Alternative path 2: ${altPath2}, exists: ${fs.existsSync(altPath2)}`);
+          
+          console.error(`Video file not found: ${videoPath}`);
+          return res.status(404).json({ message: "Video not found" });
+        }
+      } catch (error) {
+        console.error(`Error checking file existence: ${error}`);
+        return res.status(500).json({ message: "Error accessing file" });
       }
       
       try {
