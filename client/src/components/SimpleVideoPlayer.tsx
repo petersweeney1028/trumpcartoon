@@ -135,7 +135,10 @@ const SimpleVideoPlayer: React.FC<SimpleVideoPlayerProps> = ({
     
     // Auto-play if user has interacted or if transitioning between scenes
     if (hasUserInteracted || currentScene > 0) {
-      playCurrentScene();
+      // Add a small delay to ensure media is fully ready
+      setTimeout(() => {
+        playCurrentScene();
+      }, 100);
     }
   }, [hasUserInteracted, currentScene, playCurrentScene]);
 
