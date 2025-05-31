@@ -25,6 +25,8 @@ const SimpleVideoPlayer: React.FC<SimpleVideoPlayerProps> = ({
   const [isLoading, setIsLoading] = useState(true);
   const [hasUserInteracted, setHasUserInteracted] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [sceneReady, setSceneReady] = useState(false);
+  const [playLock, setPlayLock] = useState(false);
 
   const videoRef = useRef<HTMLVideoElement>(null);
   const audioRef = useRef<HTMLAudioElement>(null);
@@ -56,19 +58,19 @@ const SimpleVideoPlayer: React.FC<SimpleVideoPlayerProps> = ({
     }
   ];
 
-  // Play current scene
+  // Play current scene with proper guards
   const playCurrentScene = useCallback(async () => {
     const video = videoRef.current;
     const audio = audioRef.current;
     
-    if (!video || !audio) return;
+    if (!video || !audio || playLock || !sceneReady) return;
 
-    console.log('🎬 playCurrentScene called');
-    console.log(`Video readyState: ${video.readyState}, Audio readyState: ${audio.readyState}`);
+    // Prevent reentrant calls
+    setPlayLock(true);
     
-    // Only play if both media are fully loaded
+    // Only play if both media are fully loaded and scene is ready
     if (video.readyState < 4 || audio.readyState < 4) {
-      console.log('⏳ Media not ready, waiting...');
+      setPlayLock(false);
       return;
     }
     
@@ -79,31 +81,24 @@ const SimpleVideoPlayer: React.FC<SimpleVideoPlayerProps> = ({
       video.currentTime = 0;
       audio.currentTime = 0;
       
-      console.log('🎵 Starting parallel play calls');
-      
-      // Start playing both in parallel and await both
-      const [videoResult, audioResult] = await Promise.all([
-        video.play().catch(err => {
-          console.error('Video play failed:', err);
-          throw err;
-        }),
-        audio.play().catch(err => {
-          console.error('Audio play failed:', err);
-          throw err;
-        })
+      // Start playing both in parallel
+      await Promise.all([
+        video.play(),
+        audio.play()
       ]);
       
       setIsPlaying(true);
       onPlayPauseToggle?.(true);
-      console.log(`✅ Successfully playing scene ${currentScene}: ${scenes[currentScene].name}`);
       
     } catch (error) {
-      console.error('❌ Play failed:', error);
+      console.error('Play failed:', error);
       setIsPlaying(false);
       onPlayPauseToggle?.(false);
       setError('Playback failed. Click to try again.');
+    } finally {
+      setPlayLock(false);
     }
-  }, [currentScene, scenes, onPlayPauseToggle]);
+  }, [sceneReady, playLock, onPlayPauseToggle]);
 
   // Pause current scene
   const pauseCurrentScene = useCallback(() => {
@@ -132,9 +127,8 @@ const SimpleVideoPlayer: React.FC<SimpleVideoPlayerProps> = ({
     
     setCurrentlyLoading(sceneIndex);
     setIsLoading(true);
+    setSceneReady(false);
     setError(null);
-    
-    console.log(`Loading scene ${sceneIndex}: ${scenes[sceneIndex].name}`);
     
     try {
       // Pause and clear existing sources to prevent interruption
@@ -181,13 +175,13 @@ const SimpleVideoPlayer: React.FC<SimpleVideoPlayerProps> = ({
         })
       ]);
       
-      console.log('✅ Both media fully loaded, ready for playback');
       setIsLoading(false);
       setCurrentlyLoading(null);
+      setSceneReady(true);
       
-      // Only start playback if user has interacted or transitioning scenes
+      // Auto-play if user has interacted
       if (hasUserInteracted || currentScene > 0) {
-        setTimeout(() => playCurrentScene(), 50);
+        playCurrentScene();
       }
       
     } catch (error) {
@@ -195,27 +189,16 @@ const SimpleVideoPlayer: React.FC<SimpleVideoPlayerProps> = ({
       setError('Failed to load media');
       setIsLoading(false);
       setCurrentlyLoading(null);
+      setSceneReady(false);
     }
     
   }, [scenes, currentlyLoading, hasUserInteracted, currentScene, playCurrentScene]);
 
-  // Handle when both video and audio are ready
-  const handleMediaReady = useCallback(() => {
-    setIsLoading(false);
-    
-    // Auto-play if user has interacted or if transitioning between scenes
-    if (hasUserInteracted || currentScene > 0) {
-      // Add a small delay to ensure media is fully ready
-      setTimeout(() => {
-        playCurrentScene();
-      }, 100);
-    }
-  }, [hasUserInteracted, currentScene, playCurrentScene]);
-
   // Load scene when currentScene changes
   useEffect(() => {
+    setSceneReady(false);
     loadScene(currentScene);
-  }, [currentScene, scenes]);
+  }, [currentScene]);
 
   // Set up event listeners
   useEffect(() => {
