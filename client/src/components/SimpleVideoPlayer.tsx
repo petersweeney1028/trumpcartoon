@@ -115,13 +115,20 @@ const SimpleVideoPlayer: React.FC<SimpleVideoPlayerProps> = ({
     onPlayPauseToggle?.(false);
   }, [onPlayPauseToggle]);
 
+  // Track loading state to prevent multiple simultaneous loads
+  const [currentlyLoading, setCurrentlyLoading] = useState<number | null>(null);
+  
   // Load a specific scene
   const loadScene = useCallback(async (sceneIndex: number) => {
     const video = videoRef.current;
     const audio = audioRef.current;
     
     if (!video || !audio) return;
-
+    
+    // Prevent multiple simultaneous loads
+    if (currentlyLoading === sceneIndex) return;
+    
+    setCurrentlyLoading(sceneIndex);
     setIsLoading(true);
     setError(null);
     
@@ -146,19 +153,19 @@ const SimpleVideoPlayer: React.FC<SimpleVideoPlayerProps> = ({
       
       console.log('Both media ready - starting playback');
       setIsLoading(false);
+      setCurrentlyLoading(null);
       
-      // Force start playback immediately
-      setTimeout(() => {
-        console.log('Forcing playback start');
-        playCurrentScene();
-      }, 200);
+      // Start playback immediately
+      playCurrentScene();
       
     } catch (error) {
       console.error('Error loading media:', error);
       setError('Failed to load media');
+      setIsLoading(false);
+      setCurrentlyLoading(null);
     }
     
-  }, [scenes, hasUserInteracted, currentScene, playCurrentScene]);
+  }, [scenes, currentlyLoading, playCurrentScene]);
 
   // Handle when both video and audio are ready
   const handleMediaReady = useCallback(() => {
