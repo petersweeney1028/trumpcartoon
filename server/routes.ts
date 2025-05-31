@@ -219,7 +219,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         
         if (!fileExists) {
           // Try alternative paths
-          const altPath1 = path.join(__dirname, "..", "static", "videos", filename);
+          const altPath1 = path.join(import.meta.dirname, "..", "static", "videos", filename);
           const altPath2 = path.join(".", "static", "videos", filename);
           
           console.log(`Alternative path 1: ${altPath1}, exists: ${fs.existsSync(altPath1)}`);
