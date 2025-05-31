@@ -66,20 +66,32 @@ const SimpleVideoPlayer: React.FC<SimpleVideoPlayerProps> = ({
     console.log('🎬 playCurrentScene called');
     console.log(`Video readyState: ${video.readyState}, Audio readyState: ${audio.readyState}`);
     
+    // Only play if both media are fully loaded
+    if (video.readyState < 4 || audio.readyState < 4) {
+      console.log('⏳ Media not ready, waiting...');
+      return;
+    }
+    
     try {
       setError(null);
       
-      // Make sure both are reset
+      // Reset playback position
       video.currentTime = 0;
       audio.currentTime = 0;
       
-      console.log('🎵 Starting video.play() and audio.play()');
+      console.log('🎵 Starting parallel play calls');
       
-      // Start playing both
-      const videoPromise = video.play();
-      const audioPromise = audio.play();
-      
-      await Promise.all([videoPromise, audioPromise]);
+      // Start playing both in parallel and await both
+      const [videoResult, audioResult] = await Promise.all([
+        video.play().catch(err => {
+          console.error('Video play failed:', err);
+          throw err;
+        }),
+        audio.play().catch(err => {
+          console.error('Audio play failed:', err);
+          throw err;
+        })
+      ]);
       
       setIsPlaying(true);
       onPlayPauseToggle?.(true);
@@ -89,17 +101,7 @@ const SimpleVideoPlayer: React.FC<SimpleVideoPlayerProps> = ({
       console.error('❌ Play failed:', error);
       setIsPlaying(false);
       onPlayPauseToggle?.(false);
-      
-      // Try simple play without promises
-      try {
-        console.log('🔄 Trying simple play fallback');
-        video.play();
-        audio.play();
-        setIsPlaying(true);
-      } catch (fallbackError) {
-        console.error('Fallback play failed:', fallbackError);
-        setError('Playback failed. Click to try again.');
-      }
+      setError('Playback failed. Click to try again.');
     }
   }, [currentScene, scenes, onPlayPauseToggle]);
 
@@ -144,8 +146,8 @@ const SimpleVideoPlayer: React.FC<SimpleVideoPlayerProps> = ({
       video.load();
       audio.load();
       
-      // Small delay to ensure cleanup is complete
-      await new Promise(resolve => setTimeout(resolve, 50));
+      // Wait for load cycles to complete
+      await new Promise(resolve => setTimeout(resolve, 100));
       
       // Set new sources
       video.src = scenes[sceneIndex].video;
@@ -155,24 +157,38 @@ const SimpleVideoPlayer: React.FC<SimpleVideoPlayerProps> = ({
       video.load();
       audio.load();
       
-      // Wait for both to be ready
+      // Wait for both to be fully ready (readyState 4 = HAVE_ENOUGH_DATA)
       await Promise.all([
         new Promise(resolve => {
-          if (video.readyState >= 3) resolve(true);
-          else video.addEventListener('canplay', resolve, { once: true });
+          const checkVideo = () => {
+            if (video.readyState >= 4) {
+              resolve(true);
+            } else {
+              video.addEventListener('canplaythrough', resolve, { once: true });
+            }
+          };
+          checkVideo();
         }),
         new Promise(resolve => {
-          if (audio.readyState >= 3) resolve(true);
-          else audio.addEventListener('canplay', resolve, { once: true });
+          const checkAudio = () => {
+            if (audio.readyState >= 4) {
+              resolve(true);
+            } else {
+              audio.addEventListener('canplaythrough', resolve, { once: true });
+            }
+          };
+          checkAudio();
         })
       ]);
       
-      console.log('Both media ready - starting playback');
+      console.log('✅ Both media fully loaded, ready for playback');
       setIsLoading(false);
       setCurrentlyLoading(null);
       
-      // Start playback immediately
-      playCurrentScene();
+      // Only start playback if user has interacted or transitioning scenes
+      if (hasUserInteracted || currentScene > 0) {
+        setTimeout(() => playCurrentScene(), 50);
+      }
       
     } catch (error) {
       console.error('Error loading media:', error);
@@ -181,7 +197,7 @@ const SimpleVideoPlayer: React.FC<SimpleVideoPlayerProps> = ({
       setCurrentlyLoading(null);
     }
     
-  }, [scenes, currentlyLoading, playCurrentScene]);
+  }, [scenes, currentlyLoading, hasUserInteracted, currentScene, playCurrentScene]);
 
   // Handle when both video and audio are ready
   const handleMediaReady = useCallback(() => {
