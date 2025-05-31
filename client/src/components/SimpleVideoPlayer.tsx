@@ -122,11 +122,93 @@ const SimpleVideoPlayer: React.FC<SimpleVideoPlayerProps> = ({
     video.src = scenes[sceneIndex].video;
     audio.src = scenes[sceneIndex].audio;
     
+    console.log(`Loading scene ${sceneIndex}: ${scenes[sceneIndex].name}`);
+    console.log(`Video URL: ${video.src}`);
+    console.log(`Audio URL: ${audio.src}`);
+    
+    // Add detailed event listeners for debugging
+    const handleVideoProgress = () => {
+      console.log(`Video loading progress - readyState: ${video.readyState}, networkState: ${video.networkState}`);
+    };
+    
+    const handleAudioProgress = () => {
+      console.log(`Audio loading progress - readyState: ${audio.readyState}, networkState: ${audio.networkState}`);
+    };
+    
+    const handleVideoLoadStart = () => console.log('Video load started');
+    const handleAudioLoadStart = () => console.log('Audio load started');
+    const handleVideoLoadedMetadata = () => console.log('Video metadata loaded');
+    const handleAudioLoadedMetadata = () => console.log('Audio metadata loaded');
+    const handleVideoLoadedData = () => console.log('Video data loaded');
+    const handleAudioLoadedData = () => console.log('Audio data loaded');
+    const handleVideoCanPlay = () => console.log('Video can start playing');
+    const handleAudioCanPlay = () => console.log('Audio can start playing');
+    const handleVideoStalled = () => console.log('Video stalled');
+    const handleAudioStalled = () => console.log('Audio stalled');
+    const handleVideoSuspend = () => console.log('Video suspended');
+    const handleAudioSuspend = () => console.log('Audio suspended');
+    
+    // Error handlers
+    const handleVideoError = (e: Event) => {
+      const target = e.target as HTMLVideoElement;
+      console.error('Video error:', {
+        error: target.error,
+        code: target.error?.code,
+        message: target.error?.message,
+        src: target.src
+      });
+      setError(`Video error: ${target.error?.message || 'Unknown error'}`);
+    };
+    
+    const handleAudioError = (e: Event) => {
+      const target = e.target as HTMLAudioElement;
+      console.error('Audio error:', {
+        error: target.error,
+        code: target.error?.code,
+        message: target.error?.message,
+        src: target.src
+      });
+      setError(`Audio error: ${target.error?.message || 'Unknown error'}`);
+    };
+    
+    // Add all the debug listeners
+    video.addEventListener('loadstart', handleVideoLoadStart);
+    video.addEventListener('loadedmetadata', handleVideoLoadedMetadata);
+    video.addEventListener('loadeddata', handleVideoLoadedData);
+    video.addEventListener('canplay', handleVideoCanPlay);
+    video.addEventListener('progress', handleVideoProgress);
+    video.addEventListener('stalled', handleVideoStalled);
+    video.addEventListener('suspend', handleVideoSuspend);
+    video.addEventListener('error', handleVideoError);
+    
+    audio.addEventListener('loadstart', handleAudioLoadStart);
+    audio.addEventListener('loadedmetadata', handleAudioLoadedMetadata);
+    audio.addEventListener('loadeddata', handleAudioLoadedData);
+    audio.addEventListener('canplay', handleAudioCanPlay);
+    audio.addEventListener('progress', handleAudioProgress);
+    audio.addEventListener('stalled', handleAudioStalled);
+    audio.addEventListener('suspend', handleAudioSuspend);
+    audio.addEventListener('error', handleAudioError);
+    
     // Load the media
     video.load();
     audio.load();
     
-    console.log(`Loading scene ${sceneIndex}: ${scenes[sceneIndex].name}`);
+    // Set a timeout to check if loading gets stuck
+    setTimeout(() => {
+      console.log(`After 5 seconds - Video readyState: ${video.readyState}, networkState: ${video.networkState}`);
+      console.log(`After 5 seconds - Audio readyState: ${audio.readyState}, networkState: ${audio.networkState}`);
+      
+      if (video.readyState === 0) {
+        console.error('Video failed to start loading after 5 seconds');
+        setError('Video failed to load - network or format issue');
+      }
+      if (audio.readyState === 0) {
+        console.error('Audio failed to start loading after 5 seconds');
+        setError('Audio failed to load - network or format issue');
+      }
+    }, 5000);
+    
   }, [scenes, pauseCurrentScene]);
 
   // Handle when both video and audio are ready
