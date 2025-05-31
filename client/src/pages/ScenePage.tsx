@@ -101,75 +101,7 @@ const ScenePage = () => {
                   onPlayPauseToggle={handlePlayPauseToggle}
                 />
                 
-                <div className="mt-4">
-                  {/* Fallback players for debugging */}
-                  <details className="mb-2 p-2 bg-gray-100 rounded-md">
-                    <summary className="font-semibold cursor-pointer">Show original SimplePlayer</summary>
-                    <div className="mt-2">
-                      <SimplePlayer
-                        clipInfo={remix.clipInfo}
-                        script={remix.script}
-                        onPlayPauseToggle={() => {}}
-                        autoPlay={false}
-                      />
-                    </div>
-                  </details>
-                
-                  <details className="mt-2 p-2 bg-gray-100 rounded-md">
-                    <summary className="font-semibold cursor-pointer">Show ContinuousPlayer</summary>
-                    <div className="mt-2">
-                      <ContinuousPlayer
-                        clipInfo={remix.clipInfo}
-                        script={remix.script}
-                        onPlayPauseToggle={() => {}}
-                      />
-                    </div>
-                  </details>
-                
-                  <details className="mt-2 p-2 bg-gray-100 rounded-md">
-                    <summary className="font-semibold cursor-pointer">Show SequencePlayer</summary>
-                    <div className="mt-2">
-                      <SequencePlayer
-                        clipInfo={remix.clipInfo}
-                        script={remix.script}
-                        onPlayPauseToggle={() => {}}
-                      />
-                    </div>
-                  </details>
-                  
-                  <details className="mt-2 p-2 bg-gray-100 rounded-md">
-                    <summary className="font-semibold cursor-pointer">Show SequenceVideoPlayer</summary>
-                    <div className="mt-2">
-                      <SequenceVideoPlayer
-                        clipInfo={remix.clipInfo}
-                        script={remix.script}
-                        onPlayPauseToggle={() => {}}
-                      />
-                    </div>
-                  </details>
-                  
-                  <details className="mt-2 p-2 bg-gray-100 rounded-md">
-                    <summary className="font-semibold cursor-pointer">Show DirectSequencePlayer</summary>
-                    <div className="mt-2">
-                      <DirectSequencePlayer
-                        clipInfo={remix.clipInfo}
-                        script={remix.script}
-                        onPlayPauseToggle={() => {}}
-                      />
-                    </div>
-                  </details>
-                  
-                  <details className="mt-2 p-2 bg-gray-100 rounded-md">
-                    <summary className="font-semibold cursor-pointer">Show SimpleSequencePlayer</summary>
-                    <div className="mt-2">
-                      <SimpleSequencePlayer
-                        clipInfo={remix.clipInfo}
-                        script={remix.script}
-                        onPlayPauseToggle={() => {}}
-                      />
-                    </div>
-                  </details>
-                </div>
+
               </>
             ) : (
               <VideoPlayer
