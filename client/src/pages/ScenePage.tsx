@@ -92,18 +92,11 @@ const ScenePage = () => {
           {/* Left Column: Video Player */}
           <div className="lg:w-7/12">
             {remix.clipInfo ? (
-              <>
-                <div className="bg-green-100 p-2 mb-2 text-sm rounded-md">
-                  Using SimpleVideoPlayer (rewritten to avoid closure issues)
-                </div>
-                <SimpleVideoPlayer
-                  clipInfo={remix.clipInfo}
-                  script={remix.script}
-                  onPlayPauseToggle={handlePlayPauseToggle}
-                />
-                
-
-              </>
+              <SimpleVideoPlayer
+                clipInfo={remix.clipInfo}
+                script={remix.script}
+                onPlayPauseToggle={handlePlayPauseToggle}
+              />
             ) : (
               <VideoPlayer
                 videoUrl={remix.videoUrl}

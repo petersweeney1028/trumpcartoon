@@ -16,7 +16,7 @@ interface ScriptEditorProps {
   isCreating: boolean;
 }
 
-const MAX_WORDS = 20;
+const MAX_WORDS = 10;
 
 const ScriptEditor = ({ initialScript, onSubmit, isCreating }: ScriptEditorProps) => {
   const [script, setScript] = useState<ScriptData>(initialScript);

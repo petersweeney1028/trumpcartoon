@@ -2,8 +2,8 @@ import OpenAI from "openai";
 import { Script } from "@shared/schema";
 
 // Initialize OpenAI client
-const openai = new OpenAI({ 
-  apiKey: process.env.OPENAI_API_KEY || process.env.VITE_OPENAI_API_KEY 
+const openai = new OpenAI({
+  apiKey: process.env.OPENAI_API_KEY || process.env.VITE_OPENAI_API_KEY,
 });
 
 // the newest OpenAI model is "gpt-4o" which was released May 13, 2024. do not change this unless explicitly requested by the user
@@ -16,7 +16,7 @@ export async function generateScript(
   topic: string,
   trumpCaresAbout: string,
   zelenskyCaresAbout: string,
-  vanceCaresAbout: string
+  vanceCaresAbout: string,
 ): Promise<Script> {
   try {
     const systemPrompt = `
@@ -38,10 +38,10 @@ export async function generateScript(
       Character voice guidelines:
       - TRUMP: Use his signature speaking style with simple words, superlatives, self-references, repetition, and tangents. Examples: "Tremendous", "Believe me", "Nobody knows more about X than me", "Many people are saying", "It's gonna be HUGE".
       - ZELENSKY: Blend defiance with his Ukrainian accent. Mix military terminology with occasional cultural references.
-      - VANCE: Ohio-focused, blend populist rhetoric with intellectual undertones, occasional references to "hillbilly" background.
+      - VANCE: Ohio-focused, blend populist rhetoric with intellectual undertones, occasional references to "hillbilly" background. Make him a total trump suck up.
 
       Additional requirements:
-      - Each line must be no more than 20 words (approx. 6-8 seconds spoken).
+      - Each line must be no more than 10 words (approx. 6-8 seconds spoken).
       - Make lines sound authentic to each character - their cadence, word choice, and signature phrases.
       - Be edgy, risqué, and provocative - don't hold back on adult content, profanity or politically charged humor.
       - Focus on making the dialogue funny, memeable, and shareable through its shock value.
@@ -52,20 +52,20 @@ export async function generateScript(
       topic,
       trump_cares_about: trumpCaresAbout,
       zelensky_cares_about: zelenskyCaresAbout,
-      vance_cares_about: vanceCaresAbout
+      vance_cares_about: vanceCaresAbout,
     });
 
     const response = await openai.chat.completions.create({
       model: OPENAI_MODEL,
       messages: [
         { role: "system", content: systemPrompt },
-        { role: "user", content: userPrompt }
+        { role: "user", content: userPrompt },
       ],
-      response_format: { type: "json_object" }
+      response_format: { type: "json_object" },
     });
 
     const result = JSON.parse(response.choices[0].message.content || "{}");
-    
+
     // Validate we have all fields
     if (!result.trump1 || !result.zelensky || !result.trump2 || !result.vance) {
       throw new Error("Generated script is missing required lines");
@@ -75,10 +75,12 @@ export async function generateScript(
       trump1: result.trump1,
       zelensky: result.zelensky,
       trump2: result.trump2,
-      vance: result.vance
+      vance: result.vance,
     };
   } catch (error) {
     console.error("Error generating script:", error);
-    throw new Error(`Failed to generate script: ${error instanceof Error ? error.message : String(error)}`);
+    throw new Error(
+      `Failed to generate script: ${error instanceof Error ? error.message : String(error)}`,
+    );
   }
 }
