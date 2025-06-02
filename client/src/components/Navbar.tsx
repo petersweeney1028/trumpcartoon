@@ -23,12 +23,6 @@ const Navbar = () => {
               ABOUT
             </Link>
             <Link
-              href="/explore"
-              className="px-5 py-2 rounded-md bg-accent/20 font-medium text-dark hover:bg-accent/40 transition-colors"
-            >
-              DOCS
-            </Link>
-            <Link
               href="/"
               className="px-5 py-2 rounded-md bg-primary text-white font-medium hover:bg-primary/80 transition-colors"
             >
