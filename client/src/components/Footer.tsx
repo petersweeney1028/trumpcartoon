@@ -29,7 +29,7 @@ const Footer = () => {
             </p>
           </div>
 
-          <div className="grid grid-cols-2 md:grid-cols-3 gap-8">
+          <div className="grid grid-cols-2 gap-8">
             <div>
               <h3 className="text-lg font-bold mb-4">About</h3>
               <ul className="space-y-2">
@@ -46,45 +46,7 @@ const Footer = () => {
                     href="#"
                     className="text-gray-400 hover:text-primary transition-colors"
                   >
-                    Our Team
-                  </a>
-                </li>
-                <li>
-                  <a
-                    href="#"
-                    className="text-gray-400 hover:text-primary transition-colors"
-                  >
                     Careers
-                  </a>
-                </li>
-              </ul>
-            </div>
-
-            <div>
-              <h3 className="text-lg font-bold mb-4">Legal</h3>
-              <ul className="space-y-2">
-                <li>
-                  <a
-                    href="#"
-                    className="text-gray-400 hover:text-primary transition-colors"
-                  >
-                    Terms of Service
-                  </a>
-                </li>
-                <li>
-                  <a
-                    href="#"
-                    className="text-gray-400 hover:text-primary transition-colors"
-                  >
-                    Privacy Policy
-                  </a>
-                </li>
-                <li>
-                  <a
-                    href="#"
-                    className="text-gray-400 hover:text-primary transition-colors"
-                  >
-                    Cookie Policy
                   </a>
                 </li>
               </ul>
@@ -99,14 +61,6 @@ const Footer = () => {
                     className="text-gray-400 hover:text-primary transition-colors"
                   >
                     Twitter
-                  </a>
-                </li>
-                <li>
-                  <a
-                    href="#"
-                    className="text-gray-400 hover:text-primary transition-colors"
-                  >
-                    Instagram
                   </a>
                 </li>
                 <li>
