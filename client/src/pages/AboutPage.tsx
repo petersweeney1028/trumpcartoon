@@ -13,7 +13,9 @@ const AboutPage = () => {
         <p>
           I wrote a bit about that here:{" "}
           <a 
-            href="#" 
+            href="https://medium.com/@peter_sweeney/interesting-things-to-build-in-the-future-part-3-future-of-content-2e536eed6321" 
+            target="_blank"
+            rel="noopener noreferrer"
             className="text-primary hover:underline"
           >
             Interesting Things to Build in the Future – Part 3: Future of Content
@@ -54,7 +56,9 @@ const AboutPage = () => {
           So if you're here: mess around for a few minutes. Make a Rot. Share it with a friend. And if this space 
           is interesting to you—AI media, remix culture, next-gen storytelling—{" "}
           <a 
-            href="#" 
+            href="https://x.com/peter_sweeney0" 
+            target="_blank"
+            rel="noopener noreferrer"
             className="text-primary hover:underline"
           >
             DM me on X
