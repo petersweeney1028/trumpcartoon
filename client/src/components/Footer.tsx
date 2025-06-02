@@ -57,10 +57,12 @@ const Footer = () => {
               <ul className="space-y-2">
                 <li>
                   <a
-                    href="#"
+                    href="https://x.com/peter_sweeney0"
+                    target="_blank"
+                    rel="noopener noreferrer"
                     className="text-gray-400 hover:text-primary transition-colors"
                   >
-                    Twitter
+                    X
                   </a>
                 </li>
                 <li>
