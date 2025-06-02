@@ -3,7 +3,7 @@ const HowItWorksPage = () => {
     <div className="max-w-4xl mx-auto px-4 py-12">
       <h1 className="text-4xl font-heading font-bold mb-8">How ROT.CLUB Works</h1>
       
-      <div className="prose prose-lg max-w-none">
+      <div className="text-foreground">
         <h2 className="text-2xl font-bold mb-4">Technical Architecture & Implementation</h2>
         
         <p className="mb-6">
