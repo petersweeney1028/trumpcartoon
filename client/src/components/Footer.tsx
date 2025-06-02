@@ -35,7 +35,7 @@ const Footer = () => {
               <ul className="space-y-2">
                 <li>
                   <a
-                    href="#"
+                    href="/how-it-works"
                     className="text-gray-400 hover:text-primary transition-colors"
                   >
                     How it Works
