@@ -1,7 +1,7 @@
 import { Link, useLocation } from "wouter";
 import { formatDistanceToNow } from "date-fns";
 import { Remix } from "@shared/schema";
-import videoPlaceholderImg from "@assets/image_1746026572673.png";
+import cartoonPlaceholderImg from "../assets/cartoon-placeholder.png";
 
 interface RotCardProps {
   remix: Remix;
@@ -26,7 +26,7 @@ const RotCard = ({ remix }: RotCardProps) => {
       <div className="relative pt-[56.25%] bg-dark">
         {/* Video thumbnail */}
         <img 
-          src={videoPlaceholderImg} 
+          src={cartoonPlaceholderImg} 
           alt={`${remix.topic} thumbnail`}
           className="absolute inset-0 w-full h-full object-cover"
         />
