@@ -1,33 +1,18 @@
-import { useState, useRef, useEffect } from "react";
 import { Link, useLocation } from "wouter";
 import { formatDistanceToNow } from "date-fns";
 import { Remix } from "@shared/schema";
+import videoPlaceholderImg from "@assets/image_1746026572673.png";
 
 interface RotCardProps {
   remix: Remix;
 }
 
 const RotCard = ({ remix }: RotCardProps) => {
-  const [isHovering, setIsHovering] = useState(false);
-  const videoRef = useRef<HTMLVideoElement>(null);
   const [, navigate] = useLocation();
   
   const formattedDate = remix.createdAt 
     ? formatDistanceToNow(new Date(remix.createdAt), { addSuffix: true })
     : "recently";
-    
-  // Play/pause video on hover
-  useEffect(() => {
-    const video = videoRef.current;
-    if (!video) return;
-    
-    if (isHovering) {
-      video.currentTime = 0;
-      video.play().catch(err => console.log("Preview play prevented:", err));
-    } else {
-      video.pause();
-    }
-  }, [isHovering]);
 
   const handleClick = () => {
     navigate(`/scene/${remix.id}`);
@@ -36,25 +21,20 @@ const RotCard = ({ remix }: RotCardProps) => {
   return (
     <div
       className="bg-white rounded-lg overflow-hidden shadow-md hover:shadow-lg transition-shadow cursor-pointer"
-      onMouseEnter={() => setIsHovering(true)}
-      onMouseLeave={() => setIsHovering(false)}
       onClick={handleClick}
     >
       <div className="relative pt-[56.25%] bg-dark">
         {/* Video thumbnail */}
-        {remix.videoUrl ? (
-          <video 
-            ref={videoRef}
-            src={remix.videoUrl}
-            className="absolute inset-0 w-full h-full object-cover"
-            muted
-            playsInline
-          />
-        ) : (
-          <div className="absolute inset-0 bg-gradient-to-br from-gray-800 to-gray-900 flex items-center justify-center text-primary font-heading text-xl">
-            {remix.topic}
+        <img 
+          src={videoPlaceholderImg} 
+          alt={`${remix.topic} thumbnail`}
+          className="absolute inset-0 w-full h-full object-cover"
+        />
+        <div className="absolute inset-0 bg-black/50 flex items-center justify-center">
+          <div className="text-center">
+            <h3 className="text-white font-heading font-bold text-lg mb-2">{remix.topic}</h3>
           </div>
-        )}
+        </div>
         
         <div className="absolute inset-0 flex items-center justify-center">
           <button 
