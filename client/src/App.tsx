@@ -8,6 +8,7 @@ import HomePage from "@/pages/HomePage";
 import ScenePage from "@/pages/ScenePage";
 import ExplorePage from "@/pages/ExplorePage";
 import HowItWorksPage from "@/pages/HowItWorksPage";
+import AboutPage from "@/pages/AboutPage";
 import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
 
@@ -21,6 +22,7 @@ function Router() {
           <Route path="/scene/:id" component={ScenePage} />
           <Route path="/explore" component={ExplorePage} />
           <Route path="/how-it-works" component={HowItWorksPage} />
+          <Route path="/about" component={AboutPage} />
           <Route component={NotFound} />
         </Switch>
       </main>
