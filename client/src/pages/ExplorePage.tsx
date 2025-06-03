@@ -12,6 +12,18 @@ const ExplorePage = () => {
   // Fetch remixes with search and sort params
   const { data: remixes, isLoading } = useQuery({
     queryKey: ["/api/remixes", { search: searchTerm, sortBy: sortBy, limit: 20 }],
+    queryFn: async () => {
+      const params = new URLSearchParams();
+      if (searchTerm) params.append('search', searchTerm);
+      params.append('sortBy', sortBy);
+      params.append('limit', '20');
+      
+      const response = await fetch(`/api/remixes?${params.toString()}`);
+      if (!response.ok) {
+        throw new Error('Failed to fetch remixes');
+      }
+      return response.json();
+    },
     staleTime: 0, // Always fetch fresh data
     gcTime: 1000 * 60 * 5, // Keep in cache for 5 minutes
   });
