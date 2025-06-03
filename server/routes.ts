@@ -112,6 +112,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Get popular rots
   app.get("/api/remixes/popular", async (req, res) => {
     try {
+      // Disable caching for this endpoint
+      res.set('Cache-Control', 'no-cache, no-store, must-revalidate');
+      res.set('Pragma', 'no-cache');
+      res.set('Expires', '0');
+      
       const limit = parseInt(req.query.limit as string) || 4;
       const remixes = await storage.getPopularRemixes(limit);
       
@@ -237,6 +242,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Get all rots with search and sort
   app.get("/api/remixes", async (req, res) => {
     try {
+      // Disable caching for this endpoint
+      res.set('Cache-Control', 'no-cache, no-store, must-revalidate');
+      res.set('Pragma', 'no-cache');
+      res.set('Expires', '0');
+      
       const search = req.query.search as string || "";
       const sortBy = req.query.sortBy as "newest" | "popular" || "popular";
       const limit = parseInt(req.query.limit as string) || 20;
