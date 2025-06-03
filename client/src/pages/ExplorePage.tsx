@@ -11,7 +11,7 @@ const ExplorePage = () => {
   
   // Fetch remixes with search and sort params
   const { data: remixes, isLoading } = useQuery({
-    queryKey: ["/api/remixes", searchTerm, sortBy],
+    queryKey: ["/api/remixes", { search: searchTerm, sortBy: sortBy, limit: 20 }],
     staleTime: 0, // Always fetch fresh data
     gcTime: 1000 * 60 * 5, // Keep in cache for 5 minutes
   });
