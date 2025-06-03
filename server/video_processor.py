@@ -38,25 +38,65 @@ VIDEO_SEGMENTS = {
     "vance": os.path.join(CLIPS_DIR, "vance.mp4")
 }
 
+def get_media_duration(file_path):
+    """
+    Get the duration of a media file in seconds using ffprobe
+    """
+    try:
+        cmd = [
+            'ffprobe', '-v', 'quiet', '-show_entries', 'format=duration',
+            '-of', 'csv=p=0', file_path
+        ]
+        result = subprocess.run(cmd, capture_output=True, text=True, check=True)
+        return float(result.stdout.strip())
+    except Exception as e:
+        print(f"Error getting duration for {file_path}: {e}")
+        return 0
+
 def create_video_with_audio(video_path, audio_path, output_path):
     """
-    Create a video with audio using direct ffmpeg commands
+    Create a video with audio using direct ffmpeg commands.
+    If audio is longer than video, extend video by holding the last frame.
     """
     try:
         print(f"Creating video with audio. Video: {video_path}, Audio: {audio_path}")
         
-        # Use direct ffmpeg command for more reliable results
-        cmd = [
-            'ffmpeg', '-y',
-            '-i', video_path,
-            '-i', audio_path,
-            '-c:v', 'copy',
-            '-c:a', 'aac',
-            '-map', '0:v:0',
-            '-map', '1:a:0',
-            '-shortest',
-            output_path
-        ]
+        # Get durations of both video and audio
+        video_duration = get_media_duration(video_path)
+        audio_duration = get_media_duration(audio_path)
+        
+        print(f"Video duration: {video_duration}s, Audio duration: {audio_duration}s")
+        
+        if audio_duration > video_duration:
+            # Audio is longer, need to extend video by holding last frame
+            print(f"Extending video by {audio_duration - video_duration}s to match audio")
+            
+            # Create extended video that matches audio duration
+            cmd = [
+                'ffmpeg', '-y',
+                '-i', video_path,
+                '-i', audio_path,
+                '-filter_complex', f'[0:v]tpad=stop_mode=clone:stop_duration={audio_duration - video_duration}[v]',
+                '-map', '[v]',
+                '-map', '1:a:0',
+                '-c:a', 'aac',
+                '-c:v', 'libx264',
+                '-shortest',
+                output_path
+            ]
+        else:
+            # Video is longer or same length, use original approach
+            cmd = [
+                'ffmpeg', '-y',
+                '-i', video_path,
+                '-i', audio_path,
+                '-c:v', 'copy',
+                '-c:a', 'aac',
+                '-map', '0:v:0',
+                '-map', '1:a:0',
+                '-shortest',
+                output_path
+            ]
         
         process = subprocess.run(cmd, 
                                 capture_output=True, 
