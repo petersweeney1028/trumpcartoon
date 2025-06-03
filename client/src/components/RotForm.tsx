@@ -2,6 +2,7 @@ import { useState } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
+import { useQueryClient } from "@tanstack/react-query";
 import {
   Form,
   FormControl,
@@ -97,6 +98,10 @@ const RotForm = ({ onSubmitSuccess }: RotFormProps) => {
       
       const response = await apiRequest("POST", "/api/render", payload);
       const data = await response.json();
+      
+      // Invalidate remix queries to show fresh data
+      queryClient.invalidateQueries({ queryKey: ["/api/remixes"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/remixes/popular"] });
       
       toast({
         title: "Rot created!",

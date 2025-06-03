@@ -12,6 +12,8 @@ const ExplorePage = () => {
   // Fetch remixes with search and sort params
   const { data: remixes, isLoading } = useQuery({
     queryKey: ["/api/remixes", searchTerm, sortBy],
+    staleTime: 0, // Always fetch fresh data
+    gcTime: 1000 * 60 * 5, // Keep in cache for 5 minutes
   });
   
   const handleSearch = (e: React.FormEvent<HTMLFormElement>) => {
