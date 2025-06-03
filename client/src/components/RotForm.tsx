@@ -45,6 +45,7 @@ const RotForm = ({ onSubmitSuccess }: RotFormProps) => {
   const [showScriptEditor, setShowScriptEditor] = useState(false);
   const [generatedScript, setGeneratedScript] = useState<ScriptData | null>(null);
   const { toast } = useToast();
+  const queryClient = useQueryClient();
 
   const form = useForm<RotFormData>({
     resolver: zodResolver(formSchema),
