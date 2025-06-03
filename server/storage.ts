@@ -80,8 +80,8 @@ export class DatabaseStorage implements IStorage {
     if (sortBy === "newest") {
       queryBuilder = queryBuilder.orderBy(desc(remixes.createdAt));
     } else {
-      // Sort by popularity (views)
-      queryBuilder = queryBuilder.orderBy(desc(remixes.views));
+      // Sort by popularity (views), then by newest as secondary sort
+      queryBuilder = queryBuilder.orderBy(desc(remixes.views), desc(remixes.createdAt));
     }
     
     // Apply limit
