@@ -177,8 +177,62 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.status(500).json({ message: "Failed to track view" });
     }
   });
-  
 
+  // Download remix as combined video
+  app.get("/api/remixes/:id/download", async (req, res) => {
+    try {
+      const rotId = parseInt(req.params.id);
+      if (isNaN(rotId)) {
+        return res.status(400).json({ message: "Invalid rot ID" });
+      }
+
+      const remix = await storage.getRemix(rotId);
+      if (!remix) {
+        return res.status(404).json({ message: "Remix not found" });
+      }
+
+      if (!remix.clipInfo) {
+        return res.status(400).json({ message: "No video data available for download" });
+      }
+
+      // Generate combined video file using the existing video processor
+      const { generateCombinedVideo } = await import("./video");
+      const outputPath = await generateCombinedVideo(remix.id.toString(), remix.clipInfo);
+      
+      if (!outputPath) {
+        return res.status(500).json({ message: "Failed to generate video file" });
+      }
+
+      // Set headers for file download
+      res.setHeader('Content-Type', 'video/mp4');
+      res.setHeader('Content-Disposition', `attachment; filename="rot-${remix.id}.mp4"`);
+      
+      // Stream the file
+      const fs = await import("fs");
+      const path = await import("path");
+      
+      const filePath = path.resolve(outputPath);
+      if (!fs.existsSync(filePath)) {
+        return res.status(404).json({ message: "Video file not found" });
+      }
+
+      const fileStream = fs.createReadStream(filePath);
+      fileStream.pipe(res);
+      
+      // Clean up file after streaming (optional)
+      fileStream.on('end', () => {
+        setTimeout(() => {
+          if (fs.existsSync(filePath)) {
+            fs.unlinkSync(filePath);
+          }
+        }, 5000); // Delete after 5 seconds
+      });
+
+    } catch (error) {
+      console.error("Error downloading remix:", error);
+      res.status(500).json({ message: "Failed to download remix" });
+    }
+  });
   
   // Get all rots with search and sort
   app.get("/api/remixes", async (req, res) => {

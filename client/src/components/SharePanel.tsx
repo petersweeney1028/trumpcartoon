@@ -32,12 +32,33 @@ const SharePanel = ({ remixId }: SharePanelProps) => {
           });
           break;
         case 'download':
-          // This would be implemented on the backend, just show toast for now
-          toast({
-            title: "Download started",
-            description: "Your video will download shortly",
-          });
-          // Actual implementation would call API endpoint to download video
+          try {
+            const response = await fetch(`/api/remixes/${remixId}/download`);
+            if (!response.ok) {
+              throw new Error('Download failed');
+            }
+            
+            const blob = await response.blob();
+            const url = window.URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `rot-${remixId}.mp4`;
+            document.body.appendChild(a);
+            a.click();
+            window.URL.revokeObjectURL(url);
+            document.body.removeChild(a);
+            
+            toast({
+              title: "Download started",
+              description: "Your video is downloading",
+            });
+          } catch (error) {
+            toast({
+              title: "Download failed",
+              description: "Could not download video. Please try again.",
+              variant: "destructive",
+            });
+          }
           break;
         default:
           break;

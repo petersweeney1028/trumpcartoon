@@ -4,6 +4,7 @@ import fs from "fs";
 import { access, copyFile } from "fs/promises";
 import { randomUUID } from "crypto";
 import { spawn } from "child_process";
+import { Script, ClipInfo } from "@shared/schema";
 
 const mkdir = promisify(fs.mkdir);
 const writeFile = promisify(fs.writeFile);
@@ -156,6 +157,45 @@ export async function generateTTS(
   } catch (error) {
     console.error('Error generating TTS:', error);
     throw new Error(`Failed to generate TTS: ${error instanceof Error ? error.message : String(error)}`);
+  }
+}
+
+/**
+ * Generate a combined video file for download by merging all individual clips
+ */
+export async function generateCombinedVideo(
+  remixId: string,
+  clipInfo: ClipInfo
+): Promise<string | null> {
+  try {
+    await ensureDirectories();
+    
+    // Prepare the audio files for the Python script
+    const audioFiles = {
+      trump1: clipInfo.trump1Audio,
+      zelensky: clipInfo.zelenskyAudio,
+      trump2: clipInfo.trump2Audio,
+      vance: clipInfo.vanceAudio
+    };
+
+    // Use the existing Python video processor
+    const input = {
+      remixId: `download_${remixId}`,
+      audioFiles: audioFiles
+    };
+
+    const result = await runPythonScript('server/video_processor.py', input);
+    
+    if (result && result.videoUrl) {
+      // Return the full path to the generated video
+      const path = await import('path');
+      return path.join(process.cwd(), 'static', result.videoUrl.replace('/videos/', 'videos/'));
+    }
+    
+    return null;
+  } catch (error) {
+    console.error('Error generating combined video:', error);
+    return null;
   }
 }
 
